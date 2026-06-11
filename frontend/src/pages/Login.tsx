@@ -1,14 +1,29 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login } from '../lib/auth'
+import { authEnabled, login, signIn } from '../lib/auth'
 
 export default function Login() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [err, setErr] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
-    login(name.trim() || 'Nhân viên')
+    setErr('')
+    if (authEnabled) {
+      setLoading(true)
+      const error = await signIn(email.trim(), password)
+      setLoading(false)
+      if (error) {
+        setErr('Sai email hoặc mật khẩu')
+        return
+      }
+    } else {
+      login(name.trim() || 'Nhân viên')
+    }
     navigate('/search')
   }
 
@@ -24,17 +39,37 @@ export default function Login() {
         </div>
 
         <form onSubmit={submit} className="card p-7">
-          <div className="mb-4">
-            <label className="label">Tên nhân viên</label>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ví dụ: Lan" className="input" />
-          </div>
-          <div className="mb-6">
-            <label className="label">Mật khẩu</label>
-            <input type="password" placeholder="••••••• (demo: nhập gì cũng được)" className="input" />
-          </div>
-          <button className="btn-primary w-full py-3 text-base">Đăng nhập</button>
+          {authEnabled ? (
+            <>
+              <div className="mb-4">
+                <label className="label">Email</label>
+                <input autoFocus type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ban@congty.com" className="input" />
+              </div>
+              <div className="mb-2">
+                <label className="label">Mật khẩu</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="•••••••" className="input" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-4">
+                <label className="label">Tên nhân viên</label>
+                <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ví dụ: Lan" className="input" />
+              </div>
+              <div className="mb-2">
+                <label className="label">Mật khẩu</label>
+                <input type="password" placeholder="••••••• (demo: nhập gì cũng được)" className="input" />
+              </div>
+            </>
+          )}
+
+          {err && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{err}</div>}
+
+          <button disabled={loading} className="btn-primary mt-5 w-full py-3 text-base">
+            {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
+          </button>
           <p className="mt-4 text-center text-xs text-slate-400">
-            Bản demo dùng dữ liệu mẫu — không cần tài khoản thật.
+            {authEnabled ? 'Tài khoản do quản lý tạo trong hệ thống.' : 'Bản demo dùng dữ liệu mẫu — không cần tài khoản thật.'}
           </p>
         </form>
       </div>

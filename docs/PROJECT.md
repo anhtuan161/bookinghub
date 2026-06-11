@@ -68,7 +68,7 @@ Vercel chỉ phục vụ frontend tĩnh. Supabase đóng vai Database (+ Auth �
 | Database | 🟢 Nối | Supabase Postgres, đã chạy `schema.sql` + seed |
 | FE↔BE↔DB | 🟢 Thông | Đã kiểm chứng ghi xuyên suốt tới Supabase |
 | `DEMO_MODE` | 🟡 `true` | Chạy bằng dữ liệu mẫu; **chưa đọc Google Sheet thật** |
-| Auth/đăng nhập | 🔴 Chưa làm | API đang **mở** (ai có URL đều gọi được) |
+| Auth/đăng nhập | 🟡 Đã code (env-gated) | Supabase Auth (email/mật khẩu). **Chưa bật** — bật bằng env (mục 10.A) |
 | Chatbot | 🔴 Chưa làm | Giai đoạn sau |
 
 **Repo:** https://github.com/anhtuan161/bookinghub (Private), nhánh `master`.
@@ -188,10 +188,20 @@ npm run dev            # http://localhost:5173
 
 ## 10. Lộ trình tiếp theo (ưu tiên giảm dần)
 
-### A. Auth / đăng nhập (KHUYẾN NGHỊ LÀM TRƯỚC khi đổ dữ liệu thật)
-API đang mở. Phương án: **Supabase Auth** (email/mật khẩu) cho FE; backend verify JWT.
-Bảng `profiles(role: sale|manager)` đã có trong schema. Bảo vệ các route ghi.
-Tối thiểu nhanh: 1 API key header dùng chung giữa FE↔BE.
+### A. Auth / đăng nhập — ĐÃ CODE (Supabase Auth), chỉ cần BẬT
+Cơ chế (env-gated, không bật thì giữ đăng nhập demo bằng tên):
+- **Backend** (`middleware/auth.ts`): `AUTH_REQUIRED=true` → mọi `/api` (trừ `/health`) yêu cầu
+  **JWT Supabase** hợp lệ; verify bằng `SUPABASE_JWT_SECRET` (HS256).
+- **Frontend** (`lib/supabase.ts`, `lib/auth.ts`): có `VITE_SUPABASE_URL`+`VITE_SUPABASE_ANON_KEY`
+  → trang Login đổi sang email/mật khẩu thật; token tự gắn `Authorization: Bearer` mọi lời gọi API.
+
+**Cách bật:**
+1. Supabase → **Authentication → Users → Add user** (tạo tài khoản nhân viên).
+2. Supabase → **Settings → API**: lấy **Project URL**, **anon key**, **JWT Secret**.
+3. **Render** (backend): `AUTH_REQUIRED=true`, `SUPABASE_JWT_SECRET=<jwt secret>` → redeploy.
+4. **Vercel** (frontend): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` → **Redeploy** (VITE nhúng lúc build).
+> Bật cả 2 đầu cùng lúc. Nếu chỉ bật backend mà frontend chưa gửi token → sẽ bị 401.
+> `profiles(role: sale|manager)` đã có trong schema để phân quyền chi tiết sau.
 
 ### B. Bật LIVE mode (đọc Google Sheet thật)
 1. Tạo **Google Service Account** (Google Cloud) → bật Sheets API → tải JSON key.

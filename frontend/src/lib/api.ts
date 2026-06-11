@@ -23,6 +23,7 @@ import {
   parseISO,
   startOfToday,
 } from './utils'
+import { getAccessToken } from './auth'
 
 function delay<T>(value: T, ms = 250): Promise<T> {
   return new Promise((res) => setTimeout(() => res(value), ms))
@@ -40,10 +41,11 @@ function isoMinsAgo(mins: number): string {
 const API_URL: string | undefined = import.meta.env.VITE_API_URL
 
 async function http<T>(path: string, opts?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts,
-  })
+  const token = await getAccessToken()
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(opts?.headers as any) }
+  if (token) headers.Authorization = `Bearer ${token}`
+  const res = await fetch(`${API_URL}${path}`, { ...opts, headers })
+  if (res.status === 401) throw new Error('Phiên đăng nhập hết hạn — vui lòng đăng nhập lại')
   if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`)
   return res.json() as Promise<T>
 }

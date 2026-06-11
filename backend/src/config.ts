@@ -8,6 +8,10 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL ?? '',
   usePg: !!process.env.DATABASE_URL,
 
+  // Auth: AUTH_REQUIRED=true → mọi API (trừ /health) cần JWT Supabase hợp lệ.
+  authRequired: (process.env.AUTH_REQUIRED ?? 'false').toLowerCase() === 'true',
+  supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET ?? '',
+
   googleServiceAccountJson: process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? '',
   googleServiceAccountFile: process.env.GOOGLE_SERVICE_ACCOUNT_FILE ?? '',
 

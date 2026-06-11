@@ -3,6 +3,7 @@ import express from 'express'
 import cron from 'node-cron'
 import { config } from './config.js'
 import * as db from './db.js'
+import { requireAuth } from './middleware/auth.js'
 import { router } from './routes.js'
 import { syncTick } from './services/sync.js'
 
@@ -13,7 +14,7 @@ app.use(express.json({ limit: '2mb' }))
 app.get('/api/health', (_req, res) =>
   res.json({ ok: true, mode: config.demoMode ? 'demo' : 'live', storage: config.usePg ? 'postgres' : 'memory', model: config.llmModel }),
 )
-app.use('/api', router)
+app.use('/api', requireAuth, router) // /api/health ở trên đã khai báo trước → vẫn công khai
 
 async function start() {
   try {
