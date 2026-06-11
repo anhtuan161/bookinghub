@@ -4,6 +4,10 @@ export const config = {
   demoMode: (process.env.DEMO_MODE ?? 'true').toLowerCase() !== 'false',
   port: Number(process.env.PORT ?? 8787),
 
+  // Có DATABASE_URL → lưu dữ liệu vào PostgreSQL (Supabase); không có → in-memory.
+  databaseUrl: process.env.DATABASE_URL ?? '',
+  usePg: !!process.env.DATABASE_URL,
+
   googleServiceAccountJson: process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? '',
   googleServiceAccountFile: process.env.GOOGLE_SERVICE_ACCOUNT_FILE ?? '',
 

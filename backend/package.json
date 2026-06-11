@@ -7,6 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "db:init": "tsx src/scripts/db-init.ts",
     "sync:once": "tsx src/scripts/sync-once.ts"
   },
   "dependencies": {
@@ -15,13 +16,15 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
     "googleapis": "^144.0.0",
-    "node-cron": "^3.0.3"
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^22.10.0",
     "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.11.10",
     "tsx": "^4.19.2",
     "typescript": "^5.6.2"
   }

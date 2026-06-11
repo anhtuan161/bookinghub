@@ -5,7 +5,8 @@
 //  - DEMO_MODE=false: đọc sheet (kèm màu) → Claude bóc tách → ghi vào store.
 // =============================================================
 import { config } from '../config.js'
-import { properties, reviewQueue, setDay, sheets } from '../store.js'
+import * as db from '../db.js'
+import { addReview, properties, setDay, sheets } from '../store.js'
 import type { Sheet } from '../types.js'
 import { extractTab } from './extractor.js'
 import { readSpreadsheet } from './sheets.js'
@@ -17,6 +18,7 @@ export async function syncOneSheet(sheet: Sheet): Promise<void> {
   if (config.demoMode) {
     sheet.lastSyncedAt = new Date().toISOString()
     if (sheet.syncStatus !== 'error') sheet.syncStatus = 'ok'
+    db.touchSheet(sheet)
     return
   }
 
@@ -33,7 +35,7 @@ export async function syncOneSheet(sheet: Sheet): Promise<void> {
         )
         if (!prop) continue
         if (row.confidence < config.reviewConfidence || row.status === 'unknown') {
-          reviewQueue.push({
+          addReview({
             id: 'r_' + prop.id + '_' + row.date,
             propertyId: prop.id,
             propertyName: prop.name,
@@ -62,9 +64,11 @@ export async function syncOneSheet(sheet: Sheet): Promise<void> {
     sheet.lastSyncedAt = new Date().toISOString()
     sheet.syncStatus = reviewAdded > 0 ? 'needs_check' : 'ok'
     sheet.lastError = undefined
+    db.touchSheet(sheet)
   } catch (e: any) {
     sheet.syncStatus = 'error'
     sheet.lastError = e?.message ?? String(e)
+    db.touchSheet(sheet)
     console.error(`[sync] lỗi sheet ${sheet.ownerName}:`, sheet.lastError)
   }
 }

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { config } from './config.js'
+import * as db from './db.js'
 import {
   addBooking,
   addSheet,
@@ -80,6 +81,7 @@ router.post('/review/:id/resolve', (req, res) => {
     confidence: 1,
     sourceUpdatedAt: new Date().toISOString(),
   })
+  db.resolveReviewRow(item.id)
   reviewQueue.splice(idx, 1)
   res.json({ ok: true })
 })
@@ -115,7 +117,10 @@ router.post('/bookings', (req, res) => {
 router.patch('/bookings/:id', (req, res) => {
   const b = bookings.find((x) => x.id === req.params.id)
   if (!b) return res.status(404).json({ error: 'not_found' })
-  if (req.body?.status) b.status = req.body.status
+  if (req.body?.status) {
+    b.status = req.body.status
+    db.updateBookingStatus(b.id, b.status)
+  }
   res.json(b)
 })
 

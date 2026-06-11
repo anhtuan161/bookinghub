@@ -6,6 +6,7 @@
 //  - Lên production: thay file này bằng adapter PostgreSQL (xem db/schema.sql),
 //    giữ nguyên chữ ký các hàm bên dưới — route không phải đổi.
 // =============================================================
+import * as db from './db.js'
 import type {
   AvailabilityDay,
   BookingRequest,
@@ -75,7 +76,7 @@ function priceForDay(p: Property, date: Date): number {
   return p.basePrice
 }
 /** Lịch ghi đè bởi sync thật: key = `${propertyId}|${date}` */
-const overrides = new Map<string, AvailabilityDay>()
+export const overrides = new Map<string, AvailabilityDay>()
 
 export function getDay(propertyId: string, date: Date): AvailabilityDay {
   const iso = fmtISO(date)
@@ -94,8 +95,15 @@ export function getDay(propertyId: string, date: Date): AvailabilityDay {
   }
 }
 
-export function setDay(propertyId: string, day: AvailabilityDay) {
+export function setDay(propertyId: string, day: AvailabilityDay, persist = true) {
   overrides.set(`${propertyId}|${day.date}`, day)
+  if (persist) db.upsertAvailability(propertyId, day)
+}
+
+/** Thêm 1 mục Cần kiểm tra (push + ghi DB). */
+export function addReview(item: ReviewItem) {
+  reviewQueue.push(item)
+  db.insertReview(item)
 }
 
 export function getMonth(propertyId: string, year: number, month: number): AvailabilityDay[] {
@@ -138,6 +146,7 @@ let bookingSeq = bookings.length
 export function addBooking(payload: Omit<BookingRequest, 'id' | 'status' | 'createdAt'>): BookingRequest {
   const b: BookingRequest = { ...payload, id: 'b' + ++bookingSeq + '_' + hash(payload.customerName + payload.checkin), status: 'new', createdAt: new Date().toISOString() }
   bookings.unshift(b)
+  db.insertBooking(b)
   return b
 }
 
@@ -146,5 +155,6 @@ export function addSheet(payload: { ownerName: string; ownerPhone: string; url: 
   const idMatch = payload.url.match(/\/d\/([a-zA-Z0-9_-]+)/)
   const s: Sheet = { id: 's' + ++sheetSeq, ownerName: payload.ownerName, ownerPhone: payload.ownerPhone, url: payload.url, spreadsheetId: idMatch?.[1] ?? '', propertyCount: 0, syncStatus: 'needs_check', lastSyncedAt: new Date().toISOString(), assignee: '—', commissionRate: payload.commissionRate, colorMapping: {} }
   sheets.push(s)
+  db.insertSheet(s)
   return s
 }
