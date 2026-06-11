@@ -1,0 +1,20 @@
+# Dependencies & builds
+node_modules/
+dist/
+.vite/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Skill installs / local tooling (không thuộc source dự án)
+.agents/
+.claude/
+skills-lock.json
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
