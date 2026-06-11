@@ -28,7 +28,8 @@ async function start() {
     console.log(`  ▸ http://localhost:${config.port}/api/health`)
     console.log(`  ▸ Chế độ: ${config.demoMode ? 'DEMO (dữ liệu mẫu)' : 'LIVE (Google Sheet + Claude)'}`)
     console.log(`  ▸ Lưu trữ: ${config.usePg ? 'PostgreSQL (Supabase)' : 'bộ nhớ (in-memory)'}`)
-    if (!config.demoMode) console.log(`  ▸ Model bóc tách: ${config.llmModel}`)
+    if (!config.demoMode)
+      console.log(`  ▸ AI bóc tách: ${config.llmProvider === 'anthropic' ? config.llmModel : config.geminiModel} (${config.llmProvider})`)
     console.log('')
   })
 }

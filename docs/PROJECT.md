@@ -50,7 +50,7 @@ Người dùng (nhân viên)
 | Backend/API | Node + Express + TypeScript | **Render** |
 | Database | PostgreSQL | **Supabase** |
 | Đọc Google Sheet | `googleapis`, `includeGridData=true` (lấy `backgroundColor`) | (trong backend) |
-| Bóc tách AI | Claude `claude-sonnet-4-6` (tool use → structured JSON) | Anthropic API |
+| Bóc tách AI | **Gemini** (`gemini-2.0-flash`, có gói free) **hoặc** Claude (`claude-sonnet-4-6`) — đổi bằng `LLM_PROVIDER` | Google AI / Anthropic |
 | Đồng bộ | `node-cron` queue-drain | (trong backend) |
 
 **Vì sao topology này** (không dùng n8n, không Edge Functions): backend là Node/Express
@@ -196,8 +196,11 @@ Tối thiểu nhanh: 1 API key header dùng chung giữa FE↔BE.
 ### B. Bật LIVE mode (đọc Google Sheet thật)
 1. Tạo **Google Service Account** (Google Cloud) → bật Sheets API → tải JSON key.
 2. **Share** các sheet chủ nhà cho email service account (quyền Xem).
-3. Tạo **`ANTHROPIC_API_KEY`** (console.anthropic.com, cần billing).
-4. Đặt trên Render: `DEMO_MODE=false`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `ANTHROPIC_API_KEY`.
+3. Chọn AI bóc tách (env `LLM_PROVIDER`):
+   - **`gemini`** (mặc định, có gói free): `GEMINI_API_KEY` lấy ở ai.google.dev, `GEMINI_MODEL=gemini-2.0-flash`.
+   - **`anthropic`**: `ANTHROPIC_API_KEY` ở console.anthropic.com (cần billing).
+4. Đặt trên Render: `DEMO_MODE=false`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `LLM_PROVIDER` + key tương ứng.
+   - Code: `services/extract.ts` dispatch → `extractor.ts` (Claude) / `extractorGemini.ts` (Gemini), dùng chung `extract-shared.ts`.
 5. **Test 1 sheet trước**: `npm run sync:once` ở local, kiểm tra kết quả + chỉnh
    `colorMapping` (bảng nghĩa màu) cho từng chủ nhà.
    > ⚠️ **Logic ghép tên villa trong `sync.ts` còn ngây thơ** (`p.name.includes(row.property_name.slice(0,6))`).

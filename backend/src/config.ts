@@ -11,8 +11,16 @@ export const config = {
   googleServiceAccountJson: process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? '',
   googleServiceAccountFile: process.env.GOOGLE_SERVICE_ACCOUNT_FILE ?? '',
 
+  // Nhà cung cấp AI bóc tách: 'gemini' (có gói free) hoặc 'anthropic' (Claude).
+  llmProvider: (process.env.LLM_PROVIDER ?? 'gemini').toLowerCase(),
+
+  // Anthropic (Claude)
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? '',
   llmModel: process.env.LLM_MODEL ?? 'claude-sonnet-4-6',
+
+  // Google Gemini
+  geminiApiKey: process.env.GEMINI_API_KEY ?? '',
+  geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
 
   syncIntervalMinutes: Number(process.env.SYNC_INTERVAL_MINUTES ?? 2),
   syncBatchSize: Number(process.env.SYNC_BATCH_SIZE ?? 2),

@@ -8,7 +8,7 @@ import { config } from '../config.js'
 import * as db from '../db.js'
 import { addReview, properties, setDay, sheets } from '../store.js'
 import type { Sheet } from '../types.js'
-import { extractTab } from './extractor.js'
+import { extractTab } from './extract.js'
 import { readSpreadsheet } from './sheets.js'
 
 let running = false
