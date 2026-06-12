@@ -18,3 +18,6 @@ skills-lock.json
 *.log
 .DS_Store
 Thumbs.db
+
+# Google service account key (local)
+service-account.json

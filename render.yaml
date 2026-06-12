@@ -13,11 +13,14 @@ services:
     autoDeploy: true            # tự deploy lại mỗi khi push lên GitHub
     envVars:
       - key: DEMO_MODE
-        value: "true"           # đổi "false" khi đã có Google/Claude để đọc sheet thật
+        value: "false"          # LIVE: đọc Google Sheet thật + LLM bóc tách
       - key: DATABASE_URL
         sync: false             # BÍ MẬT — nhập tay trong dashboard Render (không lưu vào repo)
-      # Khi bật LIVE mode, thêm trong dashboard:
-      #   ANTHROPIC_API_KEY (sync:false)
-      #   GOOGLE_SERVICE_ACCOUNT_JSON (sync:false)
-      #   LLM_MODEL = claude-sonnet-4-6
+      # Các biến LIVE đặt trong dashboard (sync:false cho secret):
+      #   AUTH_REQUIRED = true
+      #   SUPABASE_JWT_SECRET (sync:false)
+      #   LLM_PROVIDER = gemini
+      #   GEMINI_API_KEY (sync:false)
+      #   GEMINI_MODEL = gemini-2.0-flash
+      #   GOOGLE_SERVICE_ACCOUNT_JSON (sync:false)  — hoặc dùng Secret Files (/etc/secrets/service-account.json) + GOOGLE_SERVICE_ACCOUNT_FILE
     # PORT: Render tự cấp — KHÔNG cần đặt (backend đã đọc process.env.PORT)
