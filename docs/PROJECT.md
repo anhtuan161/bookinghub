@@ -133,7 +133,7 @@ Hiện production: `DEMO_MODE=true` + có `DATABASE_URL` → **dữ liệu mẫu
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/health` | trạng thái (mode, storage, model) |
+| GET | `/health` | trạng thái: `mode`, `storage`, `provider` (gemini/anthropic), `model` (model THẬT đang dùng). Công khai, không cần auth → dùng để soi cấu hình LIVE. |
 | GET | `/properties` · `/properties/:id` | villa |
 | GET | `/properties/:id/availability?year=&month=` | lịch tháng (month 0–11) |
 | GET | `/areas` | khu vực |
@@ -207,8 +207,11 @@ Cơ chế (env-gated, không bật thì giữ đăng nhập demo bằng tên):
 1. Tạo **Google Service Account** (Google Cloud) → bật Sheets API → tải JSON key.
 2. **Share** các sheet chủ nhà cho email service account (quyền Xem).
 3. Chọn AI bóc tách (env `LLM_PROVIDER`):
-   - **`gemini`** (mặc định, có gói free): `GEMINI_API_KEY` lấy ở ai.google.dev, `GEMINI_MODEL=gemini-2.0-flash`.
-   - **`anthropic`**: `ANTHROPIC_API_KEY` ở console.anthropic.com (cần billing).
+   - **`gemini`** (mặc định, có gói free): `GEMINI_API_KEY` lấy ở ai.google.dev.
+     `GEMINI_MODEL` nên dùng **`gemini-flash-lite-latest`** (hoặc `gemini-2.5-flash-lite`) — free tier
+     nhiều lượt nhất (~1.500 req/ngày, RPM cao), hợp tác vụ bóc tách. Tránh `gemini-2.0-flash` (đã gặp
+     `limit: 0`) và dòng Pro (chỉ ~50 req/ngày). Xem hạn mức thật của key tại aistudio.google.com/rate-limit.
+   - **`anthropic`**: `ANTHROPIC_API_KEY` ở console.anthropic.com (cần billing), `LLM_MODEL=claude-sonnet-4-6`.
 4. Đặt trên Render: `DEMO_MODE=false`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `LLM_PROVIDER` + key tương ứng.
    - Code: `services/extract.ts` dispatch → `extractor.ts` (Claude) / `extractorGemini.ts` (Gemini), dùng chung `extract-shared.ts`.
 5. **Test 1 sheet trước**: `npm run sync:once` ở local, kiểm tra kết quả + chỉnh
@@ -246,6 +249,12 @@ Quản lý ảnh/tiện ích villa, báo cáo doanh thu/hoa hồng, scoring vill
   `sheets.ts` đọc màu, `extract.ts` bóc tách, `sync.ts` tự tạo villa từ sheet. Chạy `npm run sync:once` để test 1 sheet.
 - 🟡 **Lịch availability** ở DEMO sinh tự động (deterministic theo hash ngày); dữ liệu thật
   chỉ có sau khi LIVE sync ghi vào `availability_calendar`.
+- ⚠️ **Gemini 429 / `limit: 0`** (đã gặp 06/2026): lỗi `[429 Too Many Requests] ... limit: 0,
+  model: gemini-2.0-flash` nghĩa là **project của API key KHÔNG có free tier** (không phải "xài hết").
+  Đổi `GEMINI_MODEL` không cứu được — phải tạo key từ project đã **bật billing**, hoặc chuyển
+  `LLM_PROVIDER=anthropic`. Lưu ý: lỗi sync được lưu nguyên văn vào `sheets.last_error` và hiện trên
+  UI → text cũ có thể vẫn ghi model cũ cho tới khi sheet được sync lại thành công. **Soi model THẬT
+  đang chạy bằng `/api/health`** (field `provider` + `model`), đừng tin chuỗi lỗi cũ.
 - ℹ️ **Render free "ngủ"** sau ~15' không dùng → request đầu chờ ~50s. Nâng gói $7/tháng nếu cần luôn bật.
 - ℹ️ **`.env` đã gitignore** — không commit secret. Mọi khóa đặt ở Render/Vercel Environment Variables.
 
@@ -261,6 +270,10 @@ Quản lý ảnh/tiện ích villa, báo cáo doanh thu/hoa hồng, scoring vill
 4. **Sửa dữ liệu mẫu:** `backend/src/store.ts` (seed) và `frontend/src/lib/api.ts` (mock FE).
 5. **Khi build LIVE:** trọng tâm là `services/sheets.ts` (đọc đúng vùng + màu) và
    `services/extractor.ts` (prompt + bảng nghĩa màu). Test bằng `npm run sync:once`.
+   - **Cơ chế sync lỗi/retry** (`services/sync.ts`): sheet lỗi → `syncStatus='error'` + `lastError` +
+     đặt `lastSyncedAt=now`. Cron (`syncTick`) **bỏ qua sheet error trong `ERROR_RETRY_MINUTES`** (mặc định 15)
+     rồi tự thử lại — **không khoá vĩnh viễn** như bản cũ. Nút **"Đồng bộ ngay" tổng** (`syncAll`) chạy
+     **mọi** sheet kể cả đang error (đường gỡ kẹt thủ công); nút sync 1 sheet là `POST /sync/now {sheetId}`.
 6. **Commit:** nhánh `master`, push lên `anhtuan161/bookinghub`. Render auto-deploy backend khi push.
 7. **Giữ phong cách:** tiếng Việt cho UI/nhãn; nhân viên không rành công nghệ → giao diện đơn giản,
    trạng thái luôn kèm chữ (không chỉ màu), nút to, có toast xác nhận.
