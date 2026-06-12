@@ -11,6 +11,13 @@ export const config = {
   // Auth: AUTH_REQUIRED=true → mọi API (trừ /health) cần JWT Supabase hợp lệ.
   authRequired: (process.env.AUTH_REQUIRED ?? 'false').toLowerCase() === 'true',
   supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET ?? '',
+  // URL project Supabase (để verify token ES256 qua JWKS). Ưu tiên SUPABASE_URL;
+  // nếu trống thì suy từ project-ref trong DATABASE_URL (postgres.<ref>...).
+  supabaseUrl: (() => {
+    if (process.env.SUPABASE_URL) return process.env.SUPABASE_URL.replace(/\/+$/, '')
+    const m = (process.env.DATABASE_URL ?? '').match(/postgres\.([a-z0-9]+)[:.]/)
+    return m ? `https://${m[1]}.supabase.co` : ''
+  })(),
 
   googleServiceAccountJson: process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? '',
   googleServiceAccountFile: process.env.GOOGLE_SERVICE_ACCOUNT_FILE ?? '',
