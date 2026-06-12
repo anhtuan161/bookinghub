@@ -12,7 +12,14 @@ app.use(cors())
 app.use(express.json({ limit: '2mb' }))
 
 app.get('/api/health', (_req, res) =>
-  res.json({ ok: true, mode: config.demoMode ? 'demo' : 'live', storage: config.usePg ? 'postgres' : 'memory', model: config.llmModel }),
+  res.json({
+    ok: true,
+    mode: config.demoMode ? 'demo' : 'live',
+    storage: config.usePg ? 'postgres' : 'memory',
+    provider: config.llmProvider,
+    // model thật đang dùng theo provider (gemini hoặc anthropic) — để soi cấu hình live
+    model: config.llmProvider === 'anthropic' ? config.llmModel : config.geminiModel,
+  }),
 )
 app.use('/api', requireAuth, router) // /api/health ở trên đã khai báo trước → vẫn công khai
 

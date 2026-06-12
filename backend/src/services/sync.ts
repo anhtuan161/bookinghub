@@ -6,7 +6,7 @@
 // =============================================================
 import { config } from '../config.js'
 import * as db from '../db.js'
-import { addReview, properties, setDay, sheets } from '../store.js'
+import { addReview, findOrCreateProperty, setDay, sheets } from '../store.js'
 import type { Sheet } from '../types.js'
 import { extractTab } from './extract.js'
 import { readSpreadsheet } from './sheets.js'
@@ -30,10 +30,9 @@ export async function syncOneSheet(sheet: Sheet): Promise<void> {
     for (const tab of tabs) {
       const rows = await extractTab(tab, sheet.colorMapping, year)
       for (const row of rows) {
-        const prop = properties.find(
-          (p) => p.ownerId && row.property_name && p.name.toLowerCase().includes(row.property_name.toLowerCase().slice(0, 6)),
-        )
-        if (!prop) continue
+        if (!row.property_name || !row.date) continue
+        // villa do sheet định nghĩa → tìm hoặc tạo mới (1 sheet = 1 chủ nhà)
+        const prop = findOrCreateProperty(sheet.id, sheet.ownerName, row.property_name)
         if (row.confidence < config.reviewConfidence || row.status === 'unknown') {
           addReview({
             id: 'r_' + prop.id + '_' + row.date,
@@ -68,6 +67,8 @@ export async function syncOneSheet(sheet: Sheet): Promise<void> {
   } catch (e: any) {
     sheet.syncStatus = 'error'
     sheet.lastError = e?.message ?? String(e)
+    // Mốc thời gian lỗi = bây giờ → cron đếm cooldown từ đây để thử lại, không khoá vĩnh viễn.
+    sheet.lastSyncedAt = new Date().toISOString()
     db.touchSheet(sheet)
     console.error(`[sync] lỗi sheet ${sheet.ownerName}:`, sheet.lastError)
   }
@@ -78,8 +79,11 @@ export async function syncTick(): Promise<{ processed: number }> {
   if (running) return { processed: 0 }
   running = true
   try {
+    const now = Date.now()
+    const cooldownMs = config.errorRetryMinutes * 60_000
     const due = [...sheets]
-      .filter((s) => s.syncStatus !== 'error')
+      // Sheet 'error' chỉ tạm nghỉ trong cooldown rồi lại được thử (không loại vĩnh viễn).
+      .filter((s) => s.syncStatus !== 'error' || now - new Date(s.lastSyncedAt).getTime() >= cooldownMs)
       .sort((a, b) => new Date(a.lastSyncedAt).getTime() - new Date(b.lastSyncedAt).getTime())
       .slice(0, config.syncBatchSize)
     for (const s of due) await syncOneSheet(s)
@@ -92,8 +96,8 @@ export async function syncTick(): Promise<{ processed: number }> {
 /** Sync tất cả (nút "Đồng bộ ngay" toàn cục). */
 export async function syncAll(): Promise<{ processed: number }> {
   let n = 0
+  // "Đồng bộ ngay" tổng: chạy mọi sheet, kể cả sheet đang 'error' (để người dùng tự gỡ kẹt).
   for (const s of sheets) {
-    if (s.syncStatus === 'error') continue
     await syncOneSheet(s)
     n++
   }

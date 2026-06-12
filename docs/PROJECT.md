@@ -213,9 +213,13 @@ Cơ chế (env-gated, không bật thì giữ đăng nhập demo bằng tên):
    - Code: `services/extract.ts` dispatch → `extractor.ts` (Claude) / `extractorGemini.ts` (Gemini), dùng chung `extract-shared.ts`.
 5. **Test 1 sheet trước**: `npm run sync:once` ở local, kiểm tra kết quả + chỉnh
    `colorMapping` (bảng nghĩa màu) cho từng chủ nhà.
-   > ⚠️ **Logic ghép tên villa trong `sync.ts` còn ngây thơ** (`p.name.includes(row.property_name.slice(0,6))`).
-   > Cần cải thiện: map theo cấu hình rõ ràng (cột nào ↔ villa nào) thay vì đoán theo tên.
+   > ✅ LIVE sync nay **tự tạo villa từ sheet** (`findOrCreateProperty` trong `store.ts`) — 1 sheet = 1 chủ nhà,
+   > villa do tên trong sheet định nghĩa (không còn ghép vào villa demo). Villa mới ghi vào `properties` + DB.
+   > Bước cần tinh chỉnh tiếp: dựa trên output thật của `sync:once` để chỉnh prompt/bảng nghĩa màu cho chuẩn.
 6. Bật rộng dần; theo dõi tỷ lệ `needs_review`.
+
+> **Lưu ý dữ liệu demo:** trước khi LIVE production thật, nên **xóa villa/sheet demo** trong DB
+> (hoặc seed lại DB sạch) để không lẫn với dữ liệu chủ nhà thật.
 
 ### C. Nâng cấp lưu trữ thật sự (nếu scale)
 Kho in-memory hợp 1 instance Render. Nếu chạy **nhiều instance**, chúng sẽ phân kỳ
@@ -238,7 +242,8 @@ Quản lý ảnh/tiện ích villa, báo cáo doanh thu/hoa hồng, scoring vill
   trùng trên Render — xóa bớt.
 - 🔴 **API chưa có auth** — bất kỳ ai có URL đều đọc/ghi được. Làm (A) trước khi đưa dữ liệu
   chủ nhà/khách thật lên.
-- 🟡 **LIVE mode chưa test end-to-end** với sheet thật; `sync.ts` ghép villa còn ngây thơ (mục B5).
+- 🟡 **LIVE mode chưa test end-to-end** với sheet thật (cần Google SA + key Gemini/Claude). Code đã sẵn:
+  `sheets.ts` đọc màu, `extract.ts` bóc tách, `sync.ts` tự tạo villa từ sheet. Chạy `npm run sync:once` để test 1 sheet.
 - 🟡 **Lịch availability** ở DEMO sinh tự động (deterministic theo hash ngày); dữ liệu thật
   chỉ có sau khi LIVE sync ghi vào `availability_calendar`.
 - ℹ️ **Render free "ngủ"** sau ~15' không dùng → request đầu chờ ~50s. Nâng gói $7/tháng nếu cần luôn bật.

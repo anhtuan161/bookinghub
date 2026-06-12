@@ -33,6 +33,8 @@ export const config = {
   geminiApiKey: process.env.GEMINI_API_KEY ?? '',
   geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
 
+  // Sheet bị lỗi (vd 429) sẽ được cron thử lại sau ngần này phút (không khoá vĩnh viễn).
+  errorRetryMinutes: Number(process.env.ERROR_RETRY_MINUTES ?? 15),
   syncIntervalMinutes: Number(process.env.SYNC_INTERVAL_MINUTES ?? 2),
   syncBatchSize: Number(process.env.SYNC_BATCH_SIZE ?? 2),
   syncWindowMonths: Number(process.env.SYNC_WINDOW_MONTHS ?? 6),

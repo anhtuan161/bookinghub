@@ -106,6 +106,54 @@ export function addReview(item: ReviewItem) {
   db.insertReview(item)
 }
 
+function slug(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 40)
+}
+
+/**
+ * LIVE sync: tìm villa theo (chủ nhà + tên), KHÔNG có thì TẠO MỚI từ sheet.
+ * Đây là cách đúng cho dữ liệu thật — villa do sheet định nghĩa, không phải seed.
+ */
+export function findOrCreateProperty(ownerId: string, ownerName: string, name: string): Property {
+  const norm = name.toLowerCase().trim()
+  const existing = properties.find(
+    (p) => (p.ownerId === ownerId || p.ownerName === ownerName) && p.name.toLowerCase().trim() === norm,
+  )
+  if (existing) return existing
+
+  const id = ownerId + '_' + slug(name)
+  const byId = properties.find((p) => p.id === id)
+  if (byId) return byId
+
+  const p: Property = {
+    id,
+    name,
+    ownerId,
+    ownerName,
+    area: '',
+    address: '',
+    bedrooms: 0,
+    capacityStandard: 0,
+    capacityMax: 0,
+    amenities: [],
+    rules: [],
+    images: [],
+    basePrice: 0,
+    extraFeeNote: '',
+    lastSyncedAt: new Date().toISOString(),
+    sourceSheetUrl: '',
+  }
+  properties.push(p)
+  db.insertProperty(p)
+  return p
+}
+
 export function getMonth(propertyId: string, year: number, month: number): AvailabilityDay[] {
   const days = new Date(year, month + 1, 0).getDate()
   const out: AvailabilityDay[] = []
