@@ -8,6 +8,7 @@ dist/
 .env.*
 !.env.example
 *.local
+bookinghub.env
 
 # Skill installs / local tooling (không thuộc source dự án)
 .agents/

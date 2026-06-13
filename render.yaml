@@ -19,8 +19,12 @@ services:
       # Các biến LIVE đặt trong dashboard (sync:false cho secret):
       #   AUTH_REQUIRED = true
       #   SUPABASE_JWT_SECRET (sync:false)
-      #   LLM_PROVIDER = gemini
+      #   LLM_PROVIDER = openrouter   (hoặc gemini | anthropic)
+      #   --- nếu gemini ---
       #   GEMINI_API_KEY (sync:false)
       #   GEMINI_MODEL = gemini-2.0-flash
+      #   --- nếu openrouter ---
+      #   OPENROUTER_API_KEY (sync:false)
+      #   OPENROUTER_MODEL = google/gemma-4-26b-a4b-it:free
       #   GOOGLE_SERVICE_ACCOUNT_JSON (sync:false)  — hoặc dùng Secret Files (/etc/secrets/service-account.json) + GOOGLE_SERVICE_ACCOUNT_FILE
     # PORT: Render tự cấp — KHÔNG cần đặt (backend đã đọc process.env.PORT)

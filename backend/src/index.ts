@@ -17,8 +17,13 @@ app.get('/api/health', (_req, res) =>
     mode: config.demoMode ? 'demo' : 'live',
     storage: config.usePg ? 'postgres' : 'memory',
     provider: config.llmProvider,
-    // model thật đang dùng theo provider (gemini hoặc anthropic) — để soi cấu hình live
-    model: config.llmProvider === 'anthropic' ? config.llmModel : config.geminiModel,
+    // model thật đang dùng theo provider (gemini | anthropic | openrouter) — để soi cấu hình live
+    model:
+      config.llmProvider === 'anthropic'
+        ? config.llmModel
+        : config.llmProvider === 'openrouter'
+          ? config.openrouterModel
+          : config.geminiModel,
   }),
 )
 app.use('/api', requireAuth, router) // /api/health ở trên đã khai báo trước → vẫn công khai
@@ -36,8 +41,15 @@ async function start() {
     console.log(`  ▸ http://localhost:${config.port}/api/health`)
     console.log(`  ▸ Chế độ: ${config.demoMode ? 'DEMO (dữ liệu mẫu)' : 'LIVE (Google Sheet + Claude)'}`)
     console.log(`  ▸ Lưu trữ: ${config.usePg ? 'PostgreSQL (Supabase)' : 'bộ nhớ (in-memory)'}`)
-    if (!config.demoMode)
-      console.log(`  ▸ AI bóc tách: ${config.llmProvider === 'anthropic' ? config.llmModel : config.geminiModel} (${config.llmProvider})`)
+    if (!config.demoMode) {
+      const model =
+        config.llmProvider === 'anthropic'
+          ? config.llmModel
+          : config.llmProvider === 'openrouter'
+            ? config.openrouterModel
+            : config.geminiModel
+      console.log(`  ▸ AI bóc tách: ${model} (${config.llmProvider})`)
+    }
     console.log('')
   })
 }

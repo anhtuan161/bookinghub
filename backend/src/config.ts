@@ -22,7 +22,8 @@ export const config = {
   googleServiceAccountJson: process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? '',
   googleServiceAccountFile: process.env.GOOGLE_SERVICE_ACCOUNT_FILE ?? '',
 
-  // Nhà cung cấp AI bóc tách: 'gemini' (có gói free) hoặc 'anthropic' (Claude).
+  // Nhà cung cấp AI bóc tách: 'gemini' (có gói free), 'anthropic' (Claude),
+  // hoặc 'openrouter' (API tương thích OpenAI — chọn model tuỳ ý, có model free).
   llmProvider: (process.env.LLM_PROVIDER ?? 'gemini').toLowerCase(),
 
   // Anthropic (Claude)
@@ -32,6 +33,11 @@ export const config = {
   // Google Gemini
   geminiApiKey: process.env.GEMINI_API_KEY ?? '',
   geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
+
+  // OpenRouter (https://openrouter.ai) — tương thích OpenAI.
+  openrouterApiKey: process.env.OPENROUTER_API_KEY ?? '',
+  openrouterModel: process.env.OPENROUTER_MODEL ?? 'google/gemma-4-26b-a4b-it:free',
+  openrouterBaseUrl: process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1',
 
   // Sheet bị lỗi (vd 429) sẽ được cron thử lại sau ngần này phút (không khoá vĩnh viễn).
   errorRetryMinutes: Number(process.env.ERROR_RETRY_MINUTES ?? 15),
