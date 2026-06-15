@@ -188,18 +188,21 @@ export function touchSheet(s: Sheet) {
   query('update sheets set sync_status=$2, last_synced_at=now(), last_error=$3 where id=$1', [s.id, s.syncStatus, s.lastError ?? null]).catch((e) => log('touchSheet', e.message))
 }
 
-export function insertProperty(p: Property) {
+// Trả về Promise để caller AWAIT được — bảo đảm property đã ghi DB xong
+// trước khi ghi availability/review (tránh vi phạm khóa ngoại property_id).
+export async function insertProperty(p: Property) {
   if (!dbEnabled) return
-  // đảm bảo có owner trước (FK), rồi insert property
-  query('insert into owners(id,name) values($1,$2) on conflict(id) do nothing', [p.ownerId, p.ownerName])
-    .then(() =>
-      query(
-        `insert into properties(id,owner_id,name,area,address,bedrooms,capacity_standard,capacity_max,amenities,rules,images,base_price,extra_fee_note,last_synced_at)
-         values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now()) on conflict(id) do nothing`,
-        [p.id, p.ownerId, p.name, p.area, p.address, p.bedrooms, p.capacityStandard, p.capacityMax, J(p.amenities), J(p.rules), J(p.images), p.basePrice, p.extraFeeNote],
-      ),
+  try {
+    // đảm bảo có owner trước (FK), rồi insert property
+    await query('insert into owners(id,name) values($1,$2) on conflict(id) do nothing', [p.ownerId, p.ownerName])
+    await query(
+      `insert into properties(id,owner_id,name,area,address,bedrooms,capacity_standard,capacity_max,amenities,rules,images,base_price,extra_fee_note,last_synced_at)
+       values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now()) on conflict(id) do nothing`,
+      [p.id, p.ownerId, p.name, p.area, p.address, p.bedrooms, p.capacityStandard, p.capacityMax, J(p.amenities), J(p.rules), J(p.images), p.basePrice, p.extraFeeNote],
     )
-    .catch((e) => log('insertProperty', e.message))
+  } catch (e: any) {
+    log('insertProperty', e.message)
+  }
 }
 
 export function insertReview(r: ReviewItem) {

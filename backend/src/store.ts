@@ -120,7 +120,7 @@ function slug(s: string): string {
  * LIVE sync: tìm villa theo (chủ nhà + tên), KHÔNG có thì TẠO MỚI từ sheet.
  * Đây là cách đúng cho dữ liệu thật — villa do sheet định nghĩa, không phải seed.
  */
-export function findOrCreateProperty(ownerId: string, ownerName: string, name: string): Property {
+export async function findOrCreateProperty(ownerId: string, ownerName: string, name: string): Promise<Property> {
   const norm = name.toLowerCase().trim()
   const existing = properties.find(
     (p) => (p.ownerId === ownerId || p.ownerName === ownerName) && p.name.toLowerCase().trim() === norm,
@@ -150,7 +150,8 @@ export function findOrCreateProperty(ownerId: string, ownerName: string, name: s
     sourceSheetUrl: '',
   }
   properties.push(p)
-  db.insertProperty(p)
+  // AWAIT: property phải có trong DB trước khi ghi availability/review (FK).
+  await db.insertProperty(p)
   return p
 }
 

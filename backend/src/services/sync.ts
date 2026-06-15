@@ -32,7 +32,8 @@ export async function syncOneSheet(sheet: Sheet): Promise<void> {
       for (const row of rows) {
         if (!row.property_name || !row.date) continue
         // villa do sheet định nghĩa → tìm hoặc tạo mới (1 sheet = 1 chủ nhà)
-        const prop = findOrCreateProperty(sheet.id, sheet.ownerName, row.property_name)
+        // AWAIT: chờ property ghi xong DB trước khi setDay/addReview (tránh lỗi FK).
+        const prop = await findOrCreateProperty(sheet.id, sheet.ownerName, row.property_name)
         if (row.confidence < config.reviewConfidence || row.status === 'unknown') {
           addReview({
             id: 'r_' + prop.id + '_' + row.date,
