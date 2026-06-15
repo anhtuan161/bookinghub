@@ -15,9 +15,9 @@ let lastStartedAt = 0
 
 function isRateLimit(err: any): boolean {
   const status = err?.status ?? err?.statusCode ?? err?.response?.status
-  if (status === 429) return true
+  if (status === 429 || status === 503) return true // 503 = model quá tải, thử lại được
   const msg = String(err?.message ?? err ?? '')
-  return /\b429\b|too many requests|rate limit|quota|RESOURCE_EXHAUSTED/i.test(msg)
+  return /\b429\b|\b503\b|too many requests|rate limit|quota|RESOURCE_EXHAUSTED|overloaded|high demand|unavailable/i.test(msg)
 }
 
 // Lỗi VĨNH VIỄN (hết tiền/billing/key sai) — retry vô ích, fail ngay cho rõ.
