@@ -20,6 +20,14 @@ function isRateLimit(err: any): boolean {
   return /\b429\b|too many requests|rate limit|quota|RESOURCE_EXHAUSTED/i.test(msg)
 }
 
+// Lỗi VĨNH VIỄN (hết tiền/billing/key sai) — retry vô ích, fail ngay cho rõ.
+function isPermanent(err: any): boolean {
+  const msg = String(err?.message ?? err ?? '')
+  return /prepayment credits|credits? (are )?depleted|billing|insufficient|API key not valid|PERMISSION_DENIED|API_KEY_INVALID/i.test(
+    msg,
+  )
+}
+
 // Lấy thời gian chờ (ms) do nhà cung cấp gợi ý, nếu có:
 //  - OpenAI/Anthropic: header 'retry-after' (giây)
 //  - Gemini: trong message có dạng "retryDelay":"5s"
@@ -44,7 +52,7 @@ export function runThrottled<T>(fn: () => Promise<T>): Promise<T> {
       try {
         return await fn()
       } catch (err) {
-        if (!isRateLimit(err) || attempt >= config.llmMaxRetries) throw err
+        if (!isRateLimit(err) || isPermanent(err) || attempt >= config.llmMaxRetries) throw err
         const backoff = suggestedDelayMs(err) ?? Math.min(60_000, 2 ** attempt * 1000)
         console.warn(`[llm] 429 rate limit — chờ ${backoff}ms rồi thử lại (lần ${attempt + 1}/${config.llmMaxRetries})`)
         await sleep(backoff)
