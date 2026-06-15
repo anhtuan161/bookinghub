@@ -48,13 +48,13 @@ export function startOfToday(): Date {
 
 // ---------- dữ liệu ----------
 export const properties: Property[] = [
-  { id: 'soulmate', name: 'Soulmate - Hoàng Hoa Thám', ownerId: 'mebap', ownerName: 'Mẹ Bắp Homestay', area: 'Đà Lạt - P.10', address: 'Hoàng Hoa Thám, P.10, Đà Lạt', bedrooms: 2, capacityStandard: 6, capacityMax: 8, amenities: ['BBQ', 'Bếp đầy đủ', 'Máy lạnh'], rules: ['Nhận thú cưng'], images: [], basePrice: 1_300_000, extraFeeNote: 'Phụ thu 100k/người/đêm', lastSyncedAt: isoMinsAgo(12), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/mebap' },
-  { id: 'hamy', name: 'Hà My House - Phù Đổng', ownerId: 'mebap', ownerName: 'Mẹ Bắp Homestay', area: 'Đà Lạt - P.8', address: 'Phù Đổng Thiên Vương, P.8, Đà Lạt', bedrooms: 3, capacityStandard: 8, capacityMax: 10, amenities: ['BBQ', 'Bếp đầy đủ'], rules: ['Không loa kéo'], images: [], basePrice: 1_700_000, extraFeeNote: 'Phụ thu 100k/người/đêm', lastSyncedAt: isoMinsAgo(12), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/mebap' },
-  { id: 'baobao', name: 'Baobao House', ownerId: 'hoangcuong', ownerName: 'Hoàng Cường', area: 'Đà Lạt - P.7', address: '24C hẻm 68 Dankia, P.7, Đà Lạt', bedrooms: 4, capacityStandard: 8, capacityMax: 10, amenities: ['Sân nướng BBQ', 'View thung lũng'], rules: ['Nhận thú cưng', 'Không loa kéo'], images: [], basePrice: 2_500_000, extraFeeNote: 'Phụ thu 150k/người/đêm', lastSyncedAt: isoMinsAgo(45), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/hoangcuong' },
-  { id: 'andy', name: "Andy's House", ownerId: 'hoangcuong', ownerName: 'Hoàng Cường', area: 'Đà Lạt - P.9', address: '94 Lữ Gia, P.9, Đà Lạt', bedrooms: 7, capacityStandard: 14, capacityMax: 16, amenities: ['Bida', 'Karaoke', 'BBQ'], rules: [], images: [], basePrice: 4_500_000, extraFeeNote: 'Phụ thu 150k/người/đêm', lastSyncedAt: isoMinsAgo(45), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/andy' },
-  { id: 'luca', name: 'Luca Villa', ownerId: 'peace', ownerName: 'The Peace Seeker', area: 'Đà Lạt - P.9', address: 'Nguyễn Đình Chiểu, P.9, Đà Lạt', bedrooms: 5, capacityStandard: 12, capacityMax: 14, amenities: ['Lò sưởi', 'View thung lũng'], rules: ['Không nhận thú cưng', 'Không loa kéo'], images: [], basePrice: 6_000_000, extraFeeNote: 'Trên 12 khách phụ thu 300k/khách/ngày', lastSyncedAt: isoMinsAgo(160), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/peace' },
-  { id: 'pinus', name: 'Pinus Villa', ownerId: 'peace', ownerName: 'The Peace Seeker', area: 'Đà Lạt - P.10', address: 'Phạm Hồng Thái, P.10, Đà Lạt', bedrooms: 5, capacityStandard: 14, capacityMax: 16, amenities: ['Lò sưởi', 'Khu BBQ'], rules: ['Không loa kéo'], images: [], basePrice: 7_000_000, extraFeeNote: 'Cọc tài sản 2tr khi nhận phòng', lastSyncedAt: isoMinsAgo(160), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/peace' },
-  { id: 'chillbox', name: 'Chill Box', ownerId: 'peace', ownerName: 'The Peace Seeker', area: 'Đà Lạt - P.10', address: 'Hoàng Hoa Thám, P.10, Đà Lạt', bedrooms: 2, capacityStandard: 6, capacityMax: 6, amenities: ['Chảo đốt lửa', 'View rừng thông'], rules: ['Không loa kéo'], images: [], basePrice: 2_000_000, extraFeeNote: 'Cọc tài sản 500k khi nhận phòng', lastSyncedAt: isoMinsAgo(160), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/peace' },
+  { id: 'soulmate', name: 'Soulmate - Hoàng Hoa Thám', ownerId: 'mebap', ownerName: 'Mẹ Bắp Homestay', area: 'Đà Lạt - P.10', address: 'Hoàng Hoa Thám, P.10, Đà Lạt', bedrooms: 2, capacityStandard: 6, capacityMax: 8, amenities: ['BBQ', 'Bếp đầy đủ', 'Máy lạnh'], rules: ['Nhận thú cưng'], images: [], basePrice: 1_300_000, extraFeeNote: 'Phụ thu 100k/người/đêm', lastSyncedAt: isoMinsAgo(12), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/mebap', description: '', mapUrl: '' },
+  { id: 'hamy', name: 'Hà My House - Phù Đổng', ownerId: 'mebap', ownerName: 'Mẹ Bắp Homestay', area: 'Đà Lạt - P.8', address: 'Phù Đổng Thiên Vương, P.8, Đà Lạt', bedrooms: 3, capacityStandard: 8, capacityMax: 10, amenities: ['BBQ', 'Bếp đầy đủ'], rules: ['Không loa kéo'], images: [], basePrice: 1_700_000, extraFeeNote: 'Phụ thu 100k/người/đêm', lastSyncedAt: isoMinsAgo(12), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/mebap', description: '', mapUrl: '' },
+  { id: 'baobao', name: 'Baobao House', ownerId: 'hoangcuong', ownerName: 'Hoàng Cường', area: 'Đà Lạt - P.7', address: '24C hẻm 68 Dankia, P.7, Đà Lạt', bedrooms: 4, capacityStandard: 8, capacityMax: 10, amenities: ['Sân nướng BBQ', 'View thung lũng'], rules: ['Nhận thú cưng', 'Không loa kéo'], images: [], basePrice: 2_500_000, extraFeeNote: 'Phụ thu 150k/người/đêm', lastSyncedAt: isoMinsAgo(45), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/hoangcuong', description: '', mapUrl: '' },
+  { id: 'andy', name: "Andy's House", ownerId: 'hoangcuong', ownerName: 'Hoàng Cường', area: 'Đà Lạt - P.9', address: '94 Lữ Gia, P.9, Đà Lạt', bedrooms: 7, capacityStandard: 14, capacityMax: 16, amenities: ['Bida', 'Karaoke', 'BBQ'], rules: [], images: [], basePrice: 4_500_000, extraFeeNote: 'Phụ thu 150k/người/đêm', lastSyncedAt: isoMinsAgo(45), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/andy', description: '', mapUrl: '' },
+  { id: 'luca', name: 'Luca Villa', ownerId: 'peace', ownerName: 'The Peace Seeker', area: 'Đà Lạt - P.9', address: 'Nguyễn Đình Chiểu, P.9, Đà Lạt', bedrooms: 5, capacityStandard: 12, capacityMax: 14, amenities: ['Lò sưởi', 'View thung lũng'], rules: ['Không nhận thú cưng', 'Không loa kéo'], images: [], basePrice: 6_000_000, extraFeeNote: 'Trên 12 khách phụ thu 300k/khách/ngày', lastSyncedAt: isoMinsAgo(160), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/peace', description: '', mapUrl: '' },
+  { id: 'pinus', name: 'Pinus Villa', ownerId: 'peace', ownerName: 'The Peace Seeker', area: 'Đà Lạt - P.10', address: 'Phạm Hồng Thái, P.10, Đà Lạt', bedrooms: 5, capacityStandard: 14, capacityMax: 16, amenities: ['Lò sưởi', 'Khu BBQ'], rules: ['Không loa kéo'], images: [], basePrice: 7_000_000, extraFeeNote: 'Cọc tài sản 2tr khi nhận phòng', lastSyncedAt: isoMinsAgo(160), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/peace', description: '', mapUrl: '' },
+  { id: 'chillbox', name: 'Chill Box', ownerId: 'peace', ownerName: 'The Peace Seeker', area: 'Đà Lạt - P.10', address: 'Hoàng Hoa Thám, P.10, Đà Lạt', bedrooms: 2, capacityStandard: 6, capacityMax: 6, amenities: ['Chảo đốt lửa', 'View rừng thông'], rules: ['Không loa kéo'], images: [], basePrice: 2_000_000, extraFeeNote: 'Cọc tài sản 500k khi nhận phòng', lastSyncedAt: isoMinsAgo(160), sourceSheetUrl: 'https://docs.google.com/spreadsheets/d/peace', description: '', mapUrl: '' },
 ]
 
 export const sheets: Sheet[] = [
@@ -129,7 +129,12 @@ function slug(s: string): string {
  * LIVE sync: tìm villa theo (chủ nhà + tên), KHÔNG có thì TẠO MỚI từ sheet.
  * Đây là cách đúng cho dữ liệu thật — villa do sheet định nghĩa, không phải seed.
  */
-export async function findOrCreateProperty(ownerId: string, ownerName: string, name: string): Promise<Property> {
+export async function findOrCreateProperty(
+  ownerId: string,
+  ownerName: string,
+  name: string,
+  sourceSheetUrl = '',
+): Promise<Property> {
   const norm = name.toLowerCase().trim()
   const existing = properties.find(
     (p) => (p.ownerId === ownerId || p.ownerName === ownerName) && p.name.toLowerCase().trim() === norm,
@@ -156,12 +161,62 @@ export async function findOrCreateProperty(ownerId: string, ownerName: string, n
     basePrice: 0,
     extraFeeNote: '',
     lastSyncedAt: new Date().toISOString(),
-    sourceSheetUrl: '',
+    sourceSheetUrl,
+    description: '',
+    mapUrl: '',
   }
   properties.push(p)
   // AWAIT: property phải có trong DB trước khi ghi availability/review (FK).
   await db.insertProperty(p)
   return p
+}
+
+// chuẩn hóa tên để so khớp (bỏ dấu + ký tự lạ)
+function normName(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+}
+
+/**
+ * Làm giàu thông tin villa từ tab "Thông tin" của sheet (parse thuần, không AI).
+ * Khớp theo tên (chứa nhau), cập nhật: tên hiển thị gọn, mô tả, địa chỉ, map, lưu ý,
+ * link sheet gốc. Ghi xuống DB.
+ */
+export async function enrichFromInfo(
+  ownerId: string,
+  sheetUrl: string,
+  infoRows: { name: string; description: string; address: string; mapUrl: string; note: string }[],
+): Promise<number> {
+  const props = properties.filter((p) => p.ownerId === ownerId)
+  let n = 0
+  for (const p of props) {
+    if (sheetUrl && p.sourceSheetUrl !== sheetUrl) p.sourceSheetUrl = sheetUrl
+    const np = normName(p.name)
+    // chọn info có tên khớp dài nhất
+    let best: (typeof infoRows)[number] | null = null
+    let bestLen = 0
+    for (const info of infoRows) {
+      const ni = normName(info.name)
+      if (!ni) continue
+      if ((np.includes(ni) || ni.includes(np)) && ni.length > bestLen) {
+        best = info
+        bestLen = ni.length
+      }
+    }
+    if (best) {
+      p.name = best.name // tên gọn từ tab thông tin (id giữ nguyên)
+      if (best.address) p.address = best.address
+      if (best.description) p.description = best.description
+      if (best.mapUrl) p.mapUrl = best.mapUrl
+      if (best.note) p.extraFeeNote = best.note
+    }
+    await db.updatePropertyInfo(p)
+    n++
+  }
+  return n
 }
 
 export function getMonth(propertyId: string, year: number, month: number): AvailabilityDay[] {

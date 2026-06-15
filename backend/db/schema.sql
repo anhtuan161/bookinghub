@@ -43,8 +43,15 @@ create table if not exists properties (
   base_price         numeric,
   extra_fee_note     text,
   source_sheet_id    text references sheets(id),
+  source_sheet_url   text,
+  description        text,
+  map_url            text,
   last_synced_at     timestamptz
 );
+-- Bổ sung cột cho DB đã tạo từ trước (an toàn chạy lại nhiều lần):
+alter table properties add column if not exists source_sheet_url text;
+alter table properties add column if not exists description      text;
+alter table properties add column if not exists map_url          text;
 
 create table if not exists availability_calendar (
   property_id        text references properties(id),

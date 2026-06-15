@@ -112,7 +112,8 @@ async function hydrate() {
         capacityStandard: row.capacity_standard ?? 0, capacityMax: row.capacity_max ?? 0,
         amenities: row.amenities ?? [], rules: row.rules ?? [], images: row.images ?? [],
         basePrice: Number(row.base_price ?? 0), extraFeeNote: row.extra_fee_note ?? '',
-        lastSyncedAt: (row.last_synced_at ?? new Date()).toISOString(), sourceSheetUrl: '',
+        lastSyncedAt: (row.last_synced_at ?? new Date()).toISOString(),
+        sourceSheetUrl: row.source_sheet_url ?? '', description: row.description ?? '', mapUrl: row.map_url ?? '',
       })
   }
 
@@ -223,13 +224,36 @@ export async function insertProperty(p: Property) {
     // đảm bảo có owner trước (FK), rồi insert property
     await query('insert into owners(id,name) values($1,$2) on conflict(id) do nothing', [p.ownerId, p.ownerName])
     await query(
-      `insert into properties(id,owner_id,name,area,address,bedrooms,capacity_standard,capacity_max,amenities,rules,images,base_price,extra_fee_note,last_synced_at)
-       values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now()) on conflict(id) do nothing`,
-      [p.id, p.ownerId, p.name, p.area, p.address, p.bedrooms, p.capacityStandard, p.capacityMax, J(p.amenities), J(p.rules), J(p.images), p.basePrice, p.extraFeeNote],
+      `insert into properties(id,owner_id,name,area,address,bedrooms,capacity_standard,capacity_max,amenities,rules,images,base_price,extra_fee_note,source_sheet_url,description,map_url,last_synced_at)
+       values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,now()) on conflict(id) do nothing`,
+      [p.id, p.ownerId, p.name, p.area, p.address, p.bedrooms, p.capacityStandard, p.capacityMax, J(p.amenities), J(p.rules), J(p.images), p.basePrice, p.extraFeeNote, p.sourceSheetUrl, p.description, p.mapUrl],
     )
   } catch (e: any) {
     log('insertProperty', e.message)
   }
+}
+
+// Cập nhật thông tin villa (bóc từ tab "Thông tin"): tên, địa chỉ, mô tả, map, lưu ý, link sheet.
+export function updatePropertyInfo(p: Property) {
+  if (!dbEnabled) return Promise.resolve()
+  return query(
+    `update properties set name=$2, address=$3, extra_fee_note=$4, source_sheet_url=$5, description=$6, map_url=$7 where id=$1`,
+    [p.id, p.name, p.address, p.extraFeeNote, p.sourceSheetUrl, p.description, p.mapUrl],
+  ).catch((e) => log('updatePropertyInfo', e.message))
+}
+
+// Xu hướng nhu cầu theo tháng: số ngày booked/blocked vs tổng ngày đã sync.
+export async function availabilityTrend(): Promise<{ month: string; booked: number; total: number }[]> {
+  if (!dbEnabled) return []
+  const { rows } = await query(
+    `select to_char(date, 'YYYY-MM') as month,
+            count(*) filter (where status in ('booked','blocked'))::int as booked,
+            count(*)::int as total
+     from availability_calendar
+     where date >= date_trunc('month', now())
+     group by 1 order by 1`,
+  )
+  return rows as any
 }
 
 export function insertReview(r: ReviewItem) {

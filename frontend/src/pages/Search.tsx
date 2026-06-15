@@ -112,7 +112,19 @@ export default function Search() {
                 </div>
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold leading-tight">{r.property.name}</h3>
+                    {r.property.sourceSheetUrl ? (
+                      <a
+                        href={r.property.sourceSheetUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Mở Google Sheet gốc"
+                        className="font-semibold leading-tight text-slate-800 hover:text-brand-700 hover:underline"
+                      >
+                        {r.property.name} <span className="text-xs text-slate-400">↗</span>
+                      </a>
+                    ) : (
+                      <h3 className="font-semibold leading-tight">{r.property.name}</h3>
+                    )}
                   </div>
                   <div className="mt-1 text-sm text-slate-500">{r.property.area}</div>
                   <div className="mt-2 text-sm">

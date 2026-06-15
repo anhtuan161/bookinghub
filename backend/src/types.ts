@@ -28,6 +28,9 @@ export interface Property {
   extraFeeNote: string
   lastSyncedAt: string
   sourceSheetUrl: string
+  // Thông tin bóc từ tab "Thông tin" của sheet (không tốn quota AI):
+  description: string // mô tả căn (số phòng, tiện ích…) lấy nguyên văn
+  mapUrl: string // link Google Maps ("Định vị")
 }
 
 export interface AvailabilityDay {

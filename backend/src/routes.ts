@@ -166,3 +166,13 @@ router.get('/dashboard/stats', (_req, res) => {
     errorSheets,
   })
 })
+
+// Xu hướng nhu cầu theo tháng (số ngày đã đặt / tổng ngày đã sync) — vẽ chart.
+router.get('/dashboard/trend', async (_req, res) => {
+  try {
+    const rows = await db.availabilityTrend()
+    res.json(rows)
+  } catch (e: any) {
+    res.json([])
+  }
+})

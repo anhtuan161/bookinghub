@@ -585,6 +585,21 @@ export async function syncNow(target?: { sheetId?: string; propertyId?: string }
   return delay({ started: true }, 600)
 }
 
+// Xu hướng nhu cầu theo tháng (số ngày đã đặt / tổng) — cho chart Tổng quan.
+export async function getTrend(): Promise<import('./types').TrendPoint[]> {
+  if (API_URL) return http('/dashboard/trend')
+  // mock: vài tháng tới
+  const today = startOfToday()
+  return delay(
+    Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1)
+      const total = 30
+      const booked = Math.round(total * (0.4 + 0.08 * Math.sin(i)))
+      return { month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, booked, total }
+    }),
+  )
+}
+
 // ---------------- Dashboard ----------------
 export async function getDashboardStats() {
   if (API_URL) return http('/dashboard/stats')

@@ -4,6 +4,7 @@ import Toaster from './components/Toaster'
 import { getUser } from './lib/auth'
 import Login from './pages/Login'
 import Search from './pages/Search'
+import Villas from './pages/Villas'
 import PropertyDetail from './pages/PropertyDetail'
 import Review from './pages/Review'
 import Bookings from './pages/Bookings'
@@ -30,6 +31,7 @@ export default function App() {
         >
           <Route path="/" element={<Navigate to="/search" replace />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/villas" element={<Villas />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           <Route path="/review" element={<Review />} />
           <Route path="/bookings" element={<Bookings />} />

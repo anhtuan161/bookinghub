@@ -73,8 +73,27 @@ export default function PropertyDetail() {
         <div className="p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">{property.name}</h1>
-              <div className="text-slate-500">{property.address}</div>
+              {property.sourceSheetUrl ? (
+                <a
+                  href={property.sourceSheetUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Mở Google Sheet gốc"
+                  className="text-2xl font-extrabold tracking-tight text-slate-800 hover:text-brand-700 hover:underline"
+                >
+                  {property.name} <span className="align-middle text-base text-slate-400">↗</span>
+                </a>
+              ) : (
+                <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">{property.name}</h1>
+              )}
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-slate-500">
+                <span>{property.address}</span>
+                {property.mapUrl && (
+                  <a href={property.mapUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-brand-600 hover:underline">
+                    🗺️ Xem bản đồ
+                  </a>
+                )}
+              </div>
             </div>
             <button onClick={() => setBookOpen(true)} className="btn-primary">
               Tạo yêu cầu giữ phòng
@@ -97,8 +116,14 @@ export default function PropertyDetail() {
             ))}
           </div>
 
+          {property.description && (
+            <div className="mt-4 whitespace-pre-line rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-slate-600">
+              {property.description}
+            </div>
+          )}
+
           {property.extraFeeNote && (
-            <div className="mt-4 rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-slate-600">💡 {property.extraFeeNote}</div>
+            <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-700">💡 {property.extraFeeNote}</div>
           )}
 
           <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">

@@ -7,6 +7,7 @@ import { initials } from '../lib/utils'
 
 const NAV = [
   { to: '/search', label: 'Tìm phòng', icon: '🔍' },
+  { to: '/villas', label: 'Danh sách villa', icon: '🏡' },
   { to: '/review', label: 'Cần kiểm tra', icon: '⚠️', badge: true },
   { to: '/bookings', label: 'Yêu cầu giữ phòng', icon: '📋' },
   { to: '/sources', label: 'Nguồn dữ liệu', icon: '🗂️' },
@@ -80,7 +81,7 @@ export default function Layout() {
         </nav>
 
         <div className="m-3 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-relaxed text-slate-400">
-          Đang chạy <span className="font-semibold text-slate-500">dữ liệu mẫu</span> — chưa nối Google Sheet thật.
+          Dữ liệu đồng bộ từ <span className="font-semibold text-slate-500">Google Sheet</span> của chủ nhà.
         </div>
       </aside>
 

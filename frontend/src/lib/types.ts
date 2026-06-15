@@ -30,6 +30,14 @@ export interface Property {
   extraFeeNote: string
   lastSyncedAt: string
   sourceSheetUrl: string
+  description?: string // mô tả căn (từ tab "Thông tin")
+  mapUrl?: string // link Google Maps
+}
+
+export interface TrendPoint {
+  month: string // YYYY-MM
+  booked: number
+  total: number
 }
 
 export interface AvailabilityDay {

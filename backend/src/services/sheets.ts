@@ -3,6 +3,7 @@
 //  Dùng spreadsheets.get?includeGridData=true để lấy backgroundColor.
 //  Chỉ kích hoạt khi DEMO_MODE=false.
 // =============================================================
+import { readFileSync } from 'node:fs'
 import { google } from 'googleapis'
 import { config } from '../config.js'
 import type { RawTab } from '../types.js'
@@ -10,10 +11,7 @@ import type { RawTab } from '../types.js'
 function loadCredentials(): any {
   if (config.googleServiceAccountJson) return JSON.parse(config.googleServiceAccountJson)
   if (config.googleServiceAccountFile) {
-    // đọc đồng bộ để đơn giản
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const fs = require('node:fs')
-    return JSON.parse(fs.readFileSync(config.googleServiceAccountFile, 'utf8'))
+    return JSON.parse(readFileSync(config.googleServiceAccountFile, 'utf8'))
   }
   throw new Error('Thiếu GOOGLE_SERVICE_ACCOUNT_JSON hoặc GOOGLE_SERVICE_ACCOUNT_FILE')
 }
@@ -41,6 +39,74 @@ export function isFutureMonthTab(title: string, today = new Date()): boolean {
   if (year > y) return true
   if (year < y) return false
   return month >= m
+}
+
+export interface SheetInfoRow {
+  name: string
+  description: string
+  address: string
+  mapUrl: string
+  note: string
+}
+
+/** Lấy link Google Maps đầu tiên trong 1 chuỗi (cell "Định vị"). */
+function firstMapUrl(s: string): string {
+  const m = String(s).match(/https?:\/\/\S*(?:maps\.app\.goo\.gl|google\.[^/]*\/maps|goo\.gl\/maps)\S*/i)
+  return m ? m[0] : ''
+}
+
+/**
+ * Đọc tab "Thông tin" (nếu có) → thông tin từng căn. PARSE THUẦN (không gọi AI):
+ * dựa vào hàng tiêu đề có các cột Tên / Thông tin / Địa chỉ / Định vị / Lưu ý.
+ * Sheet không có tab thông tin → trả [].
+ */
+export async function readSheetInfo(spreadsheetId: string): Promise<SheetInfoRow[]> {
+  const auth = new google.auth.GoogleAuth({
+    credentials: loadCredentials(),
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  })
+  const api = google.sheets({ version: 'v4', auth })
+
+  const meta = await api.spreadsheets.get({ spreadsheetId, includeGridData: false })
+  const infoTitle = (meta.data.sheets ?? [])
+    .map((s) => s.properties?.title ?? '')
+    .find((t) => /th[ôo]ng tin/i.test(t))
+  if (!infoTitle) return []
+
+  const res = await api.spreadsheets.values.get({ spreadsheetId, range: `${infoTitle}!A1:Z200` })
+  const rows = res.data.values ?? []
+
+  // Tìm cột theo tiêu đề (có thể lặp lại nhiều khối: biệt thự, penthouse…).
+  let col: { name: number; desc: number; addr: number; map: number; note: number } | null = null
+  const norm = (s: any) => String(s ?? '').toLowerCase().trim()
+  const out: SheetInfoRow[] = []
+
+  for (const r of rows) {
+    const cells = r.map(norm)
+    const isHeader = cells.some((c) => c.startsWith('tên')) && cells.some((c) => c.includes('định vị') || c.includes('địa chỉ'))
+    if (isHeader) {
+      const find = (kw: string[]) => cells.findIndex((c) => kw.some((k) => c.includes(k)))
+      col = {
+        name: find(['tên']),
+        desc: find(['thông tin']),
+        addr: find(['địa chỉ']),
+        map: find(['định vị']),
+        note: find(['lưu ý', 'lưu y']),
+      }
+      continue
+    }
+    if (!col || col.name < 0) continue
+    const name = String(r[col.name] ?? '').trim()
+    if (!name) continue
+    out.push({
+      name,
+      description: col.desc >= 0 ? String(r[col.desc] ?? '').trim() : '',
+      address: col.addr >= 0 ? String(r[col.addr] ?? '').trim() : '',
+      mapUrl: col.map >= 0 ? firstMapUrl(r[col.map] ?? '') : '',
+      note: col.note >= 0 ? String(r[col.note] ?? '').trim() : '',
+    })
+  }
+  return out
 }
 
 /**
