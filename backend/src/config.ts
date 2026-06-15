@@ -41,6 +41,12 @@ export const config = {
 
   // Sheet bị lỗi (vd 429) sẽ được cron thử lại sau ngần này phút (không khoá vĩnh viễn).
   errorRetryMinutes: Number(process.env.ERROR_RETRY_MINUTES ?? 15),
+  // Giãn nhịp gọi LLM: khoảng cách tối thiểu giữa 2 request (ms) để không vượt
+  // rate limit free tier (2.0 Flash ~15 req/phút → 4000ms là an toàn).
+  llmMinIntervalMs: Number(process.env.LLM_MIN_INTERVAL_MS ?? 4000),
+  // Số lần thử lại khi bị 429 (rate limit), dùng exponential backoff.
+  llmMaxRetries: Number(process.env.LLM_MAX_RETRIES ?? 3),
+
   syncIntervalMinutes: Number(process.env.SYNC_INTERVAL_MINUTES ?? 2),
   syncBatchSize: Number(process.env.SYNC_BATCH_SIZE ?? 2),
   syncWindowMonths: Number(process.env.SYNC_WINDOW_MONTHS ?? 6),
