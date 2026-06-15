@@ -48,9 +48,24 @@ async function ensureSchema() {
 
 // ---------- seed dữ liệu ban đầu (nếu DB trống) ----------
 async function seedIfEmpty() {
+  // Luôn đảm bảo cấu hình SHEET thật tồn tại (dùng cho cả LIVE lẫn DEMO).
+  const sc = await query('select count(*)::int as n from sheets')
+  if (sc.rows[0].n === 0) {
+    log('Chưa có sheet → seed cấu hình sheet…')
+    for (const s of sheets)
+      await query(
+        `insert into sheets(id,url,spreadsheet_id,title,color_mapping,sync_status,last_synced_at,assignee)
+         values($1,$2,$3,$4,$5,$6,now(),$7) on conflict(id) do nothing`,
+        [s.id, s.url, s.spreadsheetId, s.ownerName, J(s.colorMapping), s.syncStatus, s.assignee],
+      )
+  }
+
+  // LIVE: KHÔNG seed villa/booking/review demo — dữ liệu thật do sync tạo từ sheet.
+  if (!config.demoMode) return
+
   const { rows } = await query('select count(*)::int as n from properties')
   if (rows[0].n > 0) return
-  log('DB trống → seed dữ liệu mẫu…')
+  log('DB trống → seed dữ liệu mẫu (DEMO)…')
 
   // owners (suy ra từ properties)
   const owners = new Map<string, string>()
@@ -63,13 +78,6 @@ async function seedIfEmpty() {
       `insert into properties(id,owner_id,name,area,address,bedrooms,capacity_standard,capacity_max,amenities,rules,images,base_price,extra_fee_note,last_synced_at)
        values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now()) on conflict(id) do nothing`,
       [p.id, p.ownerId, p.name, p.area, p.address, p.bedrooms, p.capacityStandard, p.capacityMax, J(p.amenities), J(p.rules), J(p.images), p.basePrice, p.extraFeeNote],
-    )
-
-  for (const s of sheets)
-    await query(
-      `insert into sheets(id,url,spreadsheet_id,title,color_mapping,sync_status,last_synced_at,assignee)
-       values($1,$2,$3,$4,$5,$6,now(),$7) on conflict(id) do nothing`,
-      [s.id, s.url, s.spreadsheetId, s.ownerName, J(s.colorMapping), s.syncStatus, s.assignee],
     )
 
   for (const b of bookings)
@@ -89,6 +97,25 @@ async function seedIfEmpty() {
 
 // ---------- nạp DB → bộ nhớ ----------
 async function hydrate() {
+  // owners (map id → name) để dựng ownerName cho properties
+  const ow = await query('select id, name from owners')
+  const ownerName = new Map<string, string>(ow.rows.map((r: any) => [r.id, r.name]))
+
+  // properties (nguồn sự thật ở LIVE — thay cho seed demo trong bộ nhớ)
+  const pr = await query('select * from properties order by name')
+  if (pr.rows.length || !config.demoMode) {
+    properties.length = 0
+    for (const row of pr.rows)
+      properties.push({
+        id: row.id, name: row.name, ownerId: row.owner_id, ownerName: ownerName.get(row.owner_id) ?? '',
+        area: row.area ?? '', address: row.address ?? '', bedrooms: row.bedrooms ?? 0,
+        capacityStandard: row.capacity_standard ?? 0, capacityMax: row.capacity_max ?? 0,
+        amenities: row.amenities ?? [], rules: row.rules ?? [], images: row.images ?? [],
+        basePrice: Number(row.base_price ?? 0), extraFeeNote: row.extra_fee_note ?? '',
+        lastSyncedAt: (row.last_synced_at ?? new Date()).toISOString(), sourceSheetUrl: '',
+      })
+  }
+
   // sheets
   const s = await query('select * from sheets order by id')
   if (s.rows.length) {
@@ -104,7 +131,7 @@ async function hydrate() {
 
   // bookings
   const b = await query('select * from booking_requests order by created_at desc')
-  if (b.rows.length) {
+  if (b.rows.length || !config.demoMode) {
     bookings.length = 0
     for (const row of b.rows)
       bookings.push({

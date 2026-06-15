@@ -6,6 +6,7 @@
 //  - Lên production: thay file này bằng adapter PostgreSQL (xem db/schema.sql),
 //    giữ nguyên chữ ký các hàm bên dưới — route không phải đổi.
 // =============================================================
+import { config } from './config.js'
 import * as db from './db.js'
 import type {
   AvailabilityDay,
@@ -82,6 +83,14 @@ export function getDay(propertyId: string, date: Date): AvailabilityDay {
   const iso = fmtISO(date)
   const key = `${propertyId}|${iso}`
   if (overrides.has(key)) return overrides.get(key)!
+
+  // LIVE: KHÔNG bịa dữ liệu. Ngày chưa có dữ liệu sync → coi như còn trống,
+  // giá/min_nights chưa rõ. Chỉ ngày được sheet đánh dấu (đã ghi override) mới có status thật.
+  if (!config.demoMode) {
+    return { date: iso, status: 'available', price: null, minNights: 1, note: '', confidence: 1, sourceUpdatedAt: '' }
+  }
+
+  // DEMO: sinh dữ liệu mẫu ổn định để chạy thử.
   const p = properties.find((x) => x.id === propertyId)!
   const status = statusForDay(propertyId, date)
   return {
