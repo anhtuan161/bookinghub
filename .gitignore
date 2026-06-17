@@ -22,3 +22,7 @@ Thumbs.db
 
 # Google service account key (local)
 service-account.json
+
+# n8n local exports/backups generated during manual debugging
+n8n/*.backup-*.json
+n8n/*.fixed.json

@@ -21,12 +21,16 @@ create table if not exists sheets (
   spreadsheet_id   text not null,
   title            text,
   parent_sheet_id  text,
+  parser_type      text default 'column_villas_month_tabs',
+  parser_config    jsonb default '{}',
   color_mapping    jsonb default '{}',         -- {"#ff0000":"booked","#00ff00":"available"}
   sync_status      text default 'needs_check', -- ok | error | needs_check
   last_synced_at   timestamptz,
   assignee         text,
   last_error       text
 );
+alter table sheets add column if not exists parser_type   text default 'column_villas_month_tabs';
+alter table sheets add column if not exists parser_config jsonb default '{}';
 
 create table if not exists properties (
   id                 text primary key,

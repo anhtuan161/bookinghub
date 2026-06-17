@@ -83,6 +83,8 @@ export interface Sheet {
   lastSyncedAt: string
   assignee: string
   commissionRate: number
+  parserType?: string
+  parserConfig?: Record<string, unknown>
   colorMapping: Record<string, Status>
   lastError?: string
 }

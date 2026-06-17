@@ -135,6 +135,8 @@ router.patch('/sheets/:id', (req, res) => {
   const s = sheets.find((x) => x.id === req.params.id)
   if (!s) return res.status(404).json({ error: 'not_found' })
   if (req.body?.colorMapping) s.colorMapping = req.body.colorMapping
+  if (req.body?.parserType) s.parserType = req.body.parserType
+  if (req.body?.parserConfig) s.parserConfig = req.body.parserConfig
   if (req.body?.assignee) s.assignee = req.body.assignee
   res.json(s)
 })
