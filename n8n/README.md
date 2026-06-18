@@ -269,9 +269,18 @@ Format kỳ vọng:
 Tab tháng chứa lịch
 Ngày nằm theo hàng
 Villa/căn nằm theo cột
+Tab tháng có row "Tên căn" làm nguồn chính cho tên property
 Ô có màu nền = booked
 Ô không màu = available candidate
 Tab Thông tin nếu có thì chứa tên căn / mô tả / địa chỉ / map / lưu ý
+```
+
+Quy tắc hiện tại:
+
+```text
+Tên căn trong tab tháng là nguồn chính.
+Tab Thông tin căn chỉ bổ sung ghi chú, mô tả, địa chỉ, Google Map nếu tên match.
+Không tạo property chỉ vì nó xuất hiện trong tab Thông tin căn.
 ```
 
 Nếu sheet mới khác format, đặt:

@@ -234,6 +234,7 @@ Current supported sheet shape:
 Month tabs contain calendar data
 Dates are in rows
 Villas/units are in columns
+Month tabs contain a "Ten can" row used as the primary property source
 Colored cells mean booked
 Uncolored cells are available candidates
 Optional "Thong tin" tab contains metadata
@@ -247,6 +248,14 @@ Thong tin / Mo ta
 Dia chi
 Dinh vi / Google Maps
 Luu y / Ghi chu
+```
+
+Important property source rule:
+
+```text
+Month tab "Ten can" row is the primary source for property names.
+Thong tin tab only enriches metadata when names match.
+Do not create properties solely from the Thong tin tab.
 ```
 
 Current critical rule:

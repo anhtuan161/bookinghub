@@ -62,9 +62,18 @@ Expected format:
 Tab tháng chứa lịch
 Ngày nằm theo hàng
 Villa/căn nằm theo cột
+Tab tháng có row "Tên căn" để làm nguồn chính cho property name
 Ô có màu nền = booked
 Ô không màu = available candidate
 Tab Thông tin nếu có chứa tên căn, mô tả, địa chỉ, map, lưu ý
+```
+
+Important source-of-truth rule:
+
+```text
+Tên căn trong tab tháng là nguồn chính để tạo properties.
+Tab Thông tin chỉ dùng để bổ sung description/address/map/note khi tên match.
+Không tạo property chỉ vì có dòng trong tab Thông tin.
 ```
 
 Unsupported sheet formats must not be parsed. Set:
@@ -99,7 +108,8 @@ Fixes already applied in `n8n/n8n.json`:
 
 ```text
 effectiveOwnerId = sheetId
-property name prioritizes tab Thông tin by column order
+property name comes from row "Tên căn" in month tabs
+tab Thông tin only enriches metadata by name match
 PAX/NL are no longer accepted as villa names
 ```
 
