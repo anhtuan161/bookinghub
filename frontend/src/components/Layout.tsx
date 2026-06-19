@@ -110,8 +110,8 @@ export default function Layout() {
           </div>
           <div className="flex items-center gap-4">
             <button onClick={handleRefreshDb} disabled={refreshing} className="btn-ghost">
-              <span className={refreshing ? 'animate-spin' : ''}>â†»</span>
-              {refreshing ? 'Dang cap nhat...' : 'Cap nhat du lieu'}
+              <span className={refreshing ? 'animate-spin' : ''}>↻</span>
+              {refreshing ? 'Đang cập nhật...' : 'Cập nhật dữ liệu'}
             </button>
             <button onClick={handleSync} disabled={syncing} className="btn-primary">
               <span className={syncing ? 'animate-spin' : ''}>↻</span>
