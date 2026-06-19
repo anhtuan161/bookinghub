@@ -43,7 +43,7 @@ export default function Layout() {
       await refreshDataFromDb()
       notifyDbRefresh()
       setReviews(reviewCount())
-      showToast('Da refresh data tu DB')
+      showToast('refresh dữ liệu')
     } finally {
       setRefreshing(false)
     }
