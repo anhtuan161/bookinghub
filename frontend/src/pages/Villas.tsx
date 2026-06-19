@@ -1,23 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getProperties } from '../lib/api'
+import { CITIES, cityFor, sheetKeyFor, sheetNameFor } from '../lib/catalog'
 import { onDbRefresh } from '../lib/refresh'
 import type { Property } from '../lib/types'
 import { gradientFor, initials } from '../lib/utils'
-
-const CITIES = ['Đà Lạt', 'Nha Trang', 'Phan Thiết', 'HCM']
-
-function cityFor(p: Property): string {
-  const text = [p.area, p.address, p.ownerName, p.sourceSheetUrl].join(' ').toLowerCase()
-  if (/nha\s*trang|khánh hòa|khanh hoa/.test(text)) return 'Nha Trang'
-  if (/phan\s*thiết|phan thiet|mũi né|mui ne|bình thuận|binh thuan/.test(text)) return 'Phan Thiết'
-  if (/hcm|sài gòn|sai gon|tp\.?\s*hồ\s*chí\s*minh|ho chi minh/.test(text)) return 'HCM'
-  return 'Đà Lạt'
-}
-
-function sheetNameFor(p: Property): string {
-  return p.ownerName || p.sourceSheetUrl || 'Chưa phân nhóm'
-}
 
 export default function Villas() {
   const navigate = useNavigate()
@@ -57,7 +44,7 @@ export default function Villas() {
     const groups = new Map<string, { name: string; url: string; items: Property[] }>()
     for (const p of filtered) {
       const name = sheetNameFor(p)
-      const key = `${name}|${p.sourceSheetUrl}`
+      const key = sheetKeyFor(p)
       const current = groups.get(key) ?? { name, url: p.sourceSheetUrl, items: [] }
       current.items.push(p)
       groups.set(key, current)
