@@ -518,6 +518,7 @@ let SHEETS: Sheet[] = [
     ownerName: 'Hoàng Cường',
     ownerPhone: '098 444 1368',
     url: 'https://docs.google.com/spreadsheets/d/hoangcuong',
+    parserType: 'weekday_day_columns_month_tabs',
     propertyCount: 3,
     syncStatus: 'ok',
     lastSyncedAt: isoMinsAgo(45),
@@ -560,6 +561,7 @@ export async function addOwnerSheet(payload: {
   ownerPhone: string
   url: string
   commissionRate: number
+  parserType?: string
 }): Promise<Sheet> {
   if (API_URL) return http('/sheets', { method: 'POST', body: JSON.stringify(payload) })
   const s: Sheet = {
@@ -575,6 +577,17 @@ export async function addOwnerSheet(payload: {
   }
   SHEETS = [...SHEETS, s]
   return delay(s)
+}
+
+export async function updateOwnerSheet(id: string, payload: Partial<Sheet>): Promise<Sheet> {
+  if (API_URL) return http(`/sheets/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+  let updated = SHEETS.find((s) => s.id === id)
+  SHEETS = SHEETS.map((s) => {
+    if (s.id !== id) return s
+    updated = { ...s, ...payload }
+    return updated
+  })
+  return delay(updated as Sheet)
 }
 
 export async function syncNow(target?: { sheetId?: string; propertyId?: string }): Promise<{ started: boolean }> {

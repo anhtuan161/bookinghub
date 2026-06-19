@@ -86,6 +86,8 @@ export interface Sheet {
   url: string
   city?: string
   active?: boolean
+  parserType?: string
+  parserConfig?: Record<string, unknown>
   propertyCount: number
   syncStatus: 'ok' | 'error' | 'needs_check'
   lastSyncedAt: string

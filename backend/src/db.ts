@@ -235,6 +235,16 @@ export function touchSheet(s: Sheet) {
   query('update sheets set sync_status=$2, last_synced_at=now(), last_error=$3 where id=$1', [s.id, s.syncStatus, s.lastError ?? null]).catch((e) => log('touchSheet', e.message))
 }
 
+export function updateSheetSettings(s: Sheet) {
+  if (!dbEnabled) return
+  query(
+    `update sheets
+     set parser_type=$2, parser_config=$3, color_mapping=$4, assignee=$5, city=$6, active=$7
+     where id=$1`,
+    [s.id, s.parserType ?? 'column_villas_month_tabs', J(s.parserConfig ?? {}), J(s.colorMapping ?? {}), s.assignee, s.city ?? 'Đà Lạt', s.active ?? true],
+  ).catch((e) => log('updateSheetSettings', e.message))
+}
+
 // Trả về Promise để caller AWAIT được — bảo đảm property đã ghi DB xong
 // trước khi ghi availability/review (tránh vi phạm khóa ngoại property_id).
 export async function insertProperty(p: Property) {

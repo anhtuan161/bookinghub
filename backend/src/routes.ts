@@ -129,7 +129,7 @@ router.get('/sheets', (_req, res) => res.json(sheets))
 router.post('/sheets', (req, res) => {
   const b = req.body ?? {}
   if (!b.ownerName || !b.url) return res.status(400).json({ error: 'ownerName/url required' })
-  res.json(addSheet({ ownerName: b.ownerName, ownerPhone: b.ownerPhone ?? '', url: b.url, commissionRate: Number(b.commissionRate ?? 10) }))
+  res.json(addSheet({ ownerName: b.ownerName, ownerPhone: b.ownerPhone ?? '', url: b.url, commissionRate: Number(b.commissionRate ?? 10), parserType: b.parserType }))
 })
 router.patch('/sheets/:id', (req, res) => {
   const s = sheets.find((x) => x.id === req.params.id)
@@ -138,6 +138,9 @@ router.patch('/sheets/:id', (req, res) => {
   if (req.body?.parserType) s.parserType = req.body.parserType
   if (req.body?.parserConfig) s.parserConfig = req.body.parserConfig
   if (req.body?.assignee) s.assignee = req.body.assignee
+  if (typeof req.body?.active === 'boolean') s.active = req.body.active
+  if (req.body?.city) s.city = req.body.city
+  db.updateSheetSettings(s)
   res.json(s)
 })
 

@@ -59,7 +59,7 @@ export const properties: Property[] = [
 
 export const sheets: Sheet[] = [
   { id: 's1', ownerName: 'Mẹ Bắp Homestay', ownerPhone: '097 373 8204', url: 'https://docs.google.com/spreadsheets/d/10YNQ_jCFkKkYIBWHmhijVH0u4CDnK2v612OxG5v9A0g', spreadsheetId: '10YNQ_jCFkKkYIBWHmhijVH0u4CDnK2v612OxG5v9A0g', propertyCount: 2, syncStatus: 'ok', lastSyncedAt: isoMinsAgo(12), assignee: 'Lan', commissionRate: 10, colorMapping: { '#ff0000': 'booked', '#00ff00': 'available' } },
-  { id: 's2', ownerName: 'Hoàng Cường', ownerPhone: '098 444 1368', url: 'https://docs.google.com/spreadsheets/d/1Qr_vo3uGiMYk5v0aeqWM6w817O7aKXEIDLsVtX_DijA', spreadsheetId: '1Qr_vo3uGiMYk5v0aeqWM6w817O7aKXEIDLsVtX_DijA', propertyCount: 3, syncStatus: 'ok', lastSyncedAt: isoMinsAgo(45), assignee: 'Phúc', commissionRate: 10, colorMapping: { '#ff0000': 'booked' } },
+  { id: 's2', ownerName: 'Hoàng Cường', ownerPhone: '098 444 1368', url: 'https://docs.google.com/spreadsheets/d/1Qr_vo3uGiMYk5v0aeqWM6w817O7aKXEIDLsVtX_DijA', spreadsheetId: '1Qr_vo3uGiMYk5v0aeqWM6w817O7aKXEIDLsVtX_DijA', propertyCount: 3, syncStatus: 'ok', lastSyncedAt: isoMinsAgo(45), assignee: 'Phúc', commissionRate: 10, parserType: 'weekday_day_columns_month_tabs', colorMapping: { '#ff0000': 'booked' } },
   { id: 's3', ownerName: 'The Peace Seeker', ownerPhone: '0784 975 279', url: 'https://docs.google.com/spreadsheets/d/11b0OMDpolFDEKBB4141oEgNJQhuq0FMKhRecNiK4BXw', spreadsheetId: '11b0OMDpolFDEKBB4141oEgNJQhuq0FMKhRecNiK4BXw', propertyCount: 3, syncStatus: 'needs_check', lastSyncedAt: isoMinsAgo(160), assignee: 'Lan', commissionRate: 10, colorMapping: { '#00ff00': 'available' }, lastError: 'Tab "Tháng 7" đổi cấu trúc — cần gán lại nghĩa màu' },
 ]
 
@@ -264,9 +264,9 @@ export function addBooking(payload: Omit<BookingRequest, 'id' | 'status' | 'crea
 }
 
 let sheetSeq = sheets.length
-export function addSheet(payload: { ownerName: string; ownerPhone: string; url: string; commissionRate: number }): Sheet {
+export function addSheet(payload: { ownerName: string; ownerPhone: string; url: string; commissionRate: number; parserType?: string }): Sheet {
   const idMatch = payload.url.match(/\/d\/([a-zA-Z0-9_-]+)/)
-  const s: Sheet = { id: 's' + ++sheetSeq, ownerName: payload.ownerName, ownerPhone: payload.ownerPhone, url: payload.url, spreadsheetId: idMatch?.[1] ?? '', city: '\u0110\u00e0 L\u1ea1t', active: true, propertyCount: 0, syncStatus: 'needs_check', lastSyncedAt: new Date().toISOString(), assignee: '—', commissionRate: payload.commissionRate, parserType: 'column_villas_month_tabs', parserConfig: {}, colorMapping: {} }
+  const s: Sheet = { id: 's' + ++sheetSeq, ownerName: payload.ownerName, ownerPhone: payload.ownerPhone, url: payload.url, spreadsheetId: idMatch?.[1] ?? '', city: '\u0110\u00e0 L\u1ea1t', active: true, propertyCount: 0, syncStatus: 'needs_check', lastSyncedAt: new Date().toISOString(), assignee: '—', commissionRate: payload.commissionRate, parserType: payload.parserType || 'column_villas_month_tabs', parserConfig: {}, colorMapping: {} }
   sheets.push(s)
   db.insertSheet(s)
   return s

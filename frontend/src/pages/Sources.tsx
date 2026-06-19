@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import Modal from '../components/Modal'
-import { addOwnerSheet, getSheets, triggerN8nManualSync } from '../lib/api'
+import { addOwnerSheet, getSheets, triggerN8nManualSync, updateOwnerSheet } from '../lib/api'
 import { onDbRefresh } from '../lib/refresh'
+import { DEFAULT_SHEET_PROFILE, SHEET_PROFILES, sheetProfileLabel } from '../lib/sheetProfiles'
 import { showToast } from '../lib/toast'
 import type { Sheet } from '../lib/types'
 import { freshness } from '../lib/utils'
@@ -33,6 +34,12 @@ export default function Sources() {
     load()
   }
 
+  async function updateSheetProfile(sheet: Sheet, parserType: string) {
+    await updateOwnerSheet(sheet.id, { parserType })
+    showToast('Da cap nhat mau sheet')
+    load()
+  }
+
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-5 flex items-center justify-between">
@@ -57,6 +64,7 @@ export default function Sources() {
               <th className="px-4 py-3">Chủ nhà</th>
               <th className="px-4 py-3">Số villa</th>
               <th className="px-4 py-3">Trạng thái</th>
+              <th className="px-4 py-3">Mẫu sheet</th>
               <th className="px-4 py-3">Cập nhật</th>
               <th className="px-4 py-3">Phụ trách</th>
               <th className="px-4 py-3 text-right">Thao tác</th>
@@ -75,6 +83,20 @@ export default function Sources() {
                   <td className="px-4 py-3">{s.propertyCount}</td>
                   <td className="px-4 py-3">
                     <span className={`badge ${SYNC_META[s.syncStatus].cls}`}>{SYNC_META[s.syncStatus].label}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      className="input h-9 min-w-[210px] text-xs"
+                      value={s.parserType || DEFAULT_SHEET_PROFILE}
+                      title={sheetProfileLabel(s.parserType)}
+                      onChange={(e) => updateSheetProfile(s, e.target.value)}
+                    >
+                      {SHEET_PROFILES.map((profile) => (
+                        <option key={profile.value} value={profile.value}>
+                          {profile.label}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
@@ -108,7 +130,7 @@ export default function Sources() {
 }
 
 function AddModal({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ ownerName: '', ownerPhone: '', url: '', commissionRate: 10 })
+  const [form, setForm] = useState({ ownerName: '', ownerPhone: '', url: '', commissionRate: 10, parserType: DEFAULT_SHEET_PROFILE })
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -118,7 +140,7 @@ function AddModal({ open, onClose, onSaved }: { open: boolean; onClose: () => vo
     }
     await addOwnerSheet(form)
     showToast('Đã thêm chủ nhà')
-    setForm({ ownerName: '', ownerPhone: '', url: '', commissionRate: 10 })
+    setForm({ ownerName: '', ownerPhone: '', url: '', commissionRate: 10, parserType: DEFAULT_SHEET_PROFILE })
     onSaved()
   }
 
@@ -136,6 +158,18 @@ function AddModal({ open, onClose, onSaved }: { open: boolean; onClose: () => vo
         </L>
         <L label="Hoa hồng (%)">
           <input type="number" className="input" value={form.commissionRate} onChange={(e) => setForm({ ...form, commissionRate: Number(e.target.value) })} />
+        </L>
+        <L label="Mẫu sheet">
+          <select className="input" value={form.parserType} onChange={(e) => setForm({ ...form, parserType: e.target.value })}>
+            {SHEET_PROFILES.map((profile) => (
+              <option key={profile.value} value={profile.value}>
+                {profile.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            Chọn theo hình dạng Google Sheet. Nếu chưa chắc, dùng "Chưa biết" để tránh sync sai.
+          </p>
         </L>
         <div className="rounded-lg bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
           Sau khi thêm, nhớ chia sẻ sheet cho tài khoản hệ thống (quyền Xem) để đồng bộ được.
