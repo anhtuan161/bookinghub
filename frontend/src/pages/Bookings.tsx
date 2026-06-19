@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getBookingRequests, updateBookingStatus } from '../lib/api'
+import { onDbRefresh } from '../lib/refresh'
 import { showToast } from '../lib/toast'
 import type { BookingRequest, BookingStatus } from '../lib/types'
 import { BOOKING_STATUS_META, fmtVN, shortPrice } from '../lib/utils'
@@ -22,7 +23,10 @@ export default function Bookings() {
   function load() {
     getBookingRequests().then(setItems)
   }
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+    return onDbRefresh(load)
+  }, [])
 
   async function change(id: string, status: BookingStatus) {
     await updateBookingStatus(id, status)

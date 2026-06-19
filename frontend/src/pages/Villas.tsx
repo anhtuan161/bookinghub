@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getProperties } from '../lib/api'
+import { onDbRefresh } from '../lib/refresh'
 import type { Property } from '../lib/types'
 import { gradientFor, initials } from '../lib/utils'
 
@@ -9,8 +10,13 @@ export default function Villas() {
   const [list, setList] = useState<Property[] | null>(null)
   const [q, setQ] = useState('')
 
-  useEffect(() => {
+  function load() {
     getProperties().then(setList)
+  }
+
+  useEffect(() => {
+    load()
+    return onDbRefresh(load)
   }, [])
 
   const filtered = useMemo(() => {

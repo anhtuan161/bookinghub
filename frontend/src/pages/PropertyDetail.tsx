@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Modal from '../components/Modal'
 import { createBookingRequest, getAvailability, getProperty } from '../lib/api'
 import { getUser } from '../lib/auth'
+import { onDbRefresh } from '../lib/refresh'
 import { showToast } from '../lib/toast'
 import type { AvailabilityDay, Channel, Property } from '../lib/types'
 import {
@@ -28,12 +29,27 @@ export default function PropertyDetail() {
   const [days, setDays] = useState<AvailabilityDay[]>([])
   const [bookOpen, setBookOpen] = useState(sp.get('book') === '1')
 
-  useEffect(() => {
+  function loadProperty() {
     if (id) getProperty(id).then(setProperty)
+  }
+
+  function loadAvailability() {
+    if (id) getAvailability(id, cursor.y, cursor.m).then(setDays)
+  }
+
+  useEffect(() => {
+    loadProperty()
   }, [id])
 
   useEffect(() => {
-    if (id) getAvailability(id, cursor.y, cursor.m).then(setDays)
+    loadAvailability()
+  }, [id, cursor])
+
+  useEffect(() => {
+    return onDbRefresh(() => {
+      loadProperty()
+      loadAvailability()
+    })
   }, [id, cursor])
 
   const dayMap = useMemo(() => {

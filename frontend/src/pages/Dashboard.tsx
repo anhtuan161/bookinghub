@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getDashboardStats, getTrend } from '../lib/api'
+import { onDbRefresh } from '../lib/refresh'
 import type { TrendPoint } from '../lib/types'
 
 interface Stats {
@@ -14,9 +15,14 @@ export default function Dashboard() {
   const [s, setS] = useState<Stats | null>(null)
   const [trend, setTrend] = useState<TrendPoint[] | null>(null)
 
-  useEffect(() => {
+  function load() {
     getDashboardStats().then(setS)
     getTrend().then(setTrend).catch(() => setTrend([]))
+  }
+
+  useEffect(() => {
+    load()
+    return onDbRefresh(load)
   }, [])
 
   if (!s) return <div className="text-slate-400">Đang tải…</div>

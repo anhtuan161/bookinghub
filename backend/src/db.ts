@@ -160,6 +160,7 @@ async function hydrate() {
     } as ReviewItem)
 
   // availability (ghi đè bởi sync thật)
+  overrides.clear()
   const a = await query('select * from availability_calendar')
   for (const row of a.rows) {
     const date = row.date instanceof Date ? row.date.toISOString().slice(0, 10) : row.date
@@ -180,6 +181,21 @@ export async function init() {
 }
 
 // ---------- ghi-xuyên-suốt (gọi từ store/routes) ----------
+export async function refreshFromDatabase() {
+  if (!dbEnabled) return { refreshed: false, storage: 'memory' as const }
+  await hydrate()
+  return {
+    refreshed: true,
+    storage: 'postgres' as const,
+    properties: properties.length,
+    sheets: sheets.length,
+    reviewQueue: reviewQueue.length,
+    bookings: bookings.length,
+    availabilityOverrides: overrides.size,
+    refreshedAt: new Date().toISOString(),
+  }
+}
+
 export function upsertAvailability(propertyId: string, d: AvailabilityDay) {
   if (!dbEnabled) return
   query(

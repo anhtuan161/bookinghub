@@ -142,6 +142,16 @@ router.patch('/sheets/:id', (req, res) => {
 })
 
 // ---------- Đồng bộ ----------
+// ---------- Refresh DB cache ----------
+router.post('/data/reload', async (_req, res) => {
+  try {
+    const result = await db.refreshFromDatabase()
+    res.json(result)
+  } catch (e: any) {
+    res.status(500).json({ error: 'db_reload_failed', message: e?.message ?? String(e) })
+  }
+})
+
 router.post('/sync/now', async (req, res) => {
   if (!config.backendSyncEnabled) {
     return res.status(410).json({

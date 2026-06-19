@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAreas, searchAvailability } from '../lib/api'
+import { onDbRefresh } from '../lib/refresh'
 import type { SearchResult } from '../lib/types'
 import { addDays, fmtISO, fmtVN, gradientFor, initials, nightsBetween, shortPrice, startOfToday } from '../lib/utils'
 
@@ -18,6 +19,13 @@ export default function Search() {
   useEffect(() => {
     getAreas().then(setAreas)
   }, [])
+
+  useEffect(() => {
+    return onDbRefresh(() => {
+      getAreas().then(setAreas)
+      if (results !== null) doSearch()
+    })
+  }, [checkin, checkout, guests, area, maxPrice, results])
 
   async function doSearch(e?: React.FormEvent) {
     e?.preventDefault()

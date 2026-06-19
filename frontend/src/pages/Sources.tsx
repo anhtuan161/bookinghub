@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Modal from '../components/Modal'
 import { addOwnerSheet, getSheets, triggerN8nManualSync } from '../lib/api'
+import { onDbRefresh } from '../lib/refresh'
 import { showToast } from '../lib/toast'
 import type { Sheet } from '../lib/types'
 import { freshness } from '../lib/utils'
@@ -19,7 +20,10 @@ export default function Sources() {
   function load() {
     getSheets().then(setSheets)
   }
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+    return onDbRefresh(load)
+  }, [])
 
   async function runN8nManual() {
     setSyncingN8n(true)

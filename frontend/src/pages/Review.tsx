@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
 import { getReviewQueue, resolveReview } from '../lib/api'
+import { onDbRefresh } from '../lib/refresh'
 import { showToast } from '../lib/toast'
 import type { ReviewItem, Status } from '../lib/types'
 import { fmtVN, fmtVND } from '../lib/utils'
@@ -13,7 +14,10 @@ export default function Review() {
   function load() {
     getReviewQueue().then(setItems)
   }
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+    return onDbRefresh(load)
+  }, [])
 
   async function confirm(it: ReviewItem) {
     await resolveReview(it.id)

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { getUser, logout } from '../lib/auth'
-import { reviewCount, triggerN8nManualSync } from '../lib/api'
+import { refreshDataFromDb, reviewCount, triggerN8nManualSync } from '../lib/api'
+import { notifyDbRefresh } from '../lib/refresh'
 import { showToast } from '../lib/toast'
 import { initials } from '../lib/utils'
 
@@ -18,6 +19,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const user = getUser() || 'Nhân viên'
   const [syncing, setSyncing] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [reviews, setReviews] = useState(reviewCount())
 
   useEffect(() => {
@@ -27,9 +29,24 @@ export default function Layout() {
 
   async function handleSync() {
     setSyncing(true)
-    await triggerN8nManualSync()
-    setSyncing(false)
-    showToast('Da gui yeu cau chay n8n manual sync')
+    try {
+      await triggerN8nManualSync()
+      showToast('Da gui yeu cau chay n8n manual sync')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  async function handleRefreshDb() {
+    setRefreshing(true)
+    try {
+      await refreshDataFromDb()
+      notifyDbRefresh()
+      setReviews(reviewCount())
+      showToast('Da refresh data tu DB')
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   function handleLogout() {
@@ -92,6 +109,10 @@ export default function Layout() {
             Xin chào, <span className="font-semibold text-slate-800">{user}</span> 👋
           </div>
           <div className="flex items-center gap-4">
+            <button onClick={handleRefreshDb} disabled={refreshing} className="btn-ghost">
+              <span className={refreshing ? 'animate-spin' : ''}>â†»</span>
+              {refreshing ? 'Dang refresh...' : 'Refresh DB'}
+            </button>
             <button onClick={handleSync} disabled={syncing} className="btn-primary">
               <span className={syncing ? 'animate-spin' : ''}>↻</span>
               {syncing ? 'Dang goi n8n...' : 'Chay n8n manual'}

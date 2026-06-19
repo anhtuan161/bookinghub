@@ -44,7 +44,13 @@ async function http<T>(path: string, opts?: RequestInit): Promise<T> {
   const token = await getAccessToken()
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(opts?.headers as any) }
   if (token) headers.Authorization = `Bearer ${token}`
-  const res = await fetch(`${API_URL}${path}`, { ...opts, headers })
+  const method = (opts?.method ?? 'GET').toUpperCase()
+  let url = `${API_URL}${path}`
+  if (method === 'GET') {
+    const sep = url.includes('?') ? '&' : '?'
+    url = `${url}${sep}_ts=${Date.now()}`
+  }
+  const res = await fetch(url, { ...opts, headers, cache: 'no-store' })
   if (res.status === 401) throw new Error('Phiên đăng nhập hết hạn — vui lòng đăng nhập lại')
   if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`)
   return res.json() as Promise<T>
@@ -591,6 +597,11 @@ export async function triggerN8nManualSync(): Promise<{ started: boolean }> {
 }
 
 // Xu hướng nhu cầu theo tháng (số ngày đã đặt / tổng) — cho chart Tổng quan.
+export async function refreshDataFromDb(): Promise<{ refreshed: boolean }> {
+  if (API_URL) return http('/data/reload', { method: 'POST' })
+  return delay({ refreshed: true }, 200)
+}
+
 export async function getTrend(): Promise<import('./types').TrendPoint[]> {
   if (API_URL) return http('/dashboard/trend')
   // mock: vài tháng tới
