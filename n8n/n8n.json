@@ -35,7 +35,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "with sync_control as (\n  select\n    -- CONTROL: de trong '' de chay tu dong theo batch; nhap 's2' hoac 's2,s3' de chi sync sheet do.\n    ''::text as only_sheet_ids,\n    10::int as batch_size\n), selected_ids as (\n  select trim(x) as id\n  from sync_control, regexp_split_to_table(sync_control.only_sheet_ids, ',') as x\n  where trim(x) <> ''\n)\nselect id, owner_id, url, spreadsheet_id, title, city, active, parser_type, parser_config, color_mapping, last_synced_at\nfrom sheets\nwhere coalesce(active, true) = true\n  and coalesce(sync_status, 'ok') <> 'disabled'\n  and (\n    not exists (select 1 from selected_ids)\n    or id in (select id from selected_ids)\n  )\norder by last_synced_at asc nulls first\nlimit (select batch_size from sync_control);",
+        "query": "with sync_control as (\n  select\n    -- CONTROL: de trong '' de chay tu dong theo batch; nhap 's2' hoac 's2,s3' de chi sync sheet do.\n    ''::text as only_sheet_ids,\n    10::int as batch_size\n), selected_ids as (\n  select trim(x) as id\n  from sync_control, regexp_split_to_table(sync_control.only_sheet_ids, ',') as x\n  where trim(x) <> ''\n)\nselect id, owner_id, url, spreadsheet_id, title, city, active, parser_type, parser_config, color_mapping, last_synced_at\nfrom sheets\nwhere coalesce(sync_status, 'ok') <> 'disabled'\n  and (\n    (exists (select 1 from selected_ids) and id in (select id from selected_ids))\n    or (not exists (select 1 from selected_ids) and coalesce(active, true) = true)\n  )\norder by last_synced_at asc nulls first\nlimit (select batch_size from sync_control);",
         "options": {}
       },
       "id": "14e3c0ba-1ad8-41db-971a-d6a31a1a8dae",
