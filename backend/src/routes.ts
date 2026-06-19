@@ -143,6 +143,12 @@ router.patch('/sheets/:id', (req, res) => {
 
 // ---------- Đồng bộ ----------
 router.post('/sync/now', async (req, res) => {
+  if (!config.backendSyncEnabled) {
+    return res.status(410).json({
+      error: 'backend_sync_disabled',
+      message: 'Backend Google Sheet sync is disabled. Use n8n manual sync instead.',
+    })
+  }
   const sheetId = req.body?.sheetId
   if (sheetId) {
     const s = sheets.find((x) => x.id === sheetId)
@@ -152,6 +158,29 @@ router.post('/sync/now', async (req, res) => {
   }
   await syncAll()
   res.json({ started: true, mode: config.demoMode ? 'demo' : 'live' })
+})
+
+router.post('/sync/n8n/manual', async (_req, res) => {
+  if (!config.n8nManualSyncWebhookUrl) {
+    return res.status(400).json({
+      error: 'missing_n8n_webhook',
+      message: 'Set N8N_MANUAL_SYNC_WEBHOOK_URL on the backend service.',
+    })
+  }
+  try {
+    const response = await fetch(config.n8nManualSyncWebhookUrl, { method: 'POST' })
+    const text = await response.text()
+    if (!response.ok) {
+      return res.status(502).json({
+        error: 'n8n_webhook_failed',
+        status: response.status,
+        body: text.slice(0, 1000),
+      })
+    }
+    res.json({ started: true, status: response.status, body: text.slice(0, 1000) })
+  } catch (e: any) {
+    res.status(502).json({ error: 'n8n_webhook_error', message: e?.message ?? String(e) })
+  }
 })
 
 // ---------- Tổng quan ----------

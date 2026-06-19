@@ -55,10 +55,13 @@ async function start() {
 }
 start()
 
-// Cron đồng bộ theo lô (queue-drain). Mỗi N phút xử lý vài sheet cũ nhất.
-const everyN = Math.max(1, config.syncIntervalMinutes)
-cron.schedule(`*/${everyN} * * * *`, () => {
-  syncTick()
-    .then((r) => r.processed > 0 && console.log(`[cron] đã đồng bộ ${r.processed} sheet`))
-    .catch((e) => console.error('[cron] lỗi:', e))
-})
+if (config.backendSyncEnabled) {
+  const everyN = Math.max(1, config.syncIntervalMinutes)
+  cron.schedule(`*/${everyN} * * * *`, () => {
+    syncTick()
+      .then((r) => r.processed > 0 && console.log(`[cron] backend synced ${r.processed} sheet(s)`))
+      .catch((e) => console.error('[cron] error:', e))
+  })
+} else {
+  console.log('[cron] Backend Google Sheet sync disabled; use n8n manual/schedule sync.')
+}

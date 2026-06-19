@@ -13,9 +13,13 @@ services:
     autoDeploy: true            # tự deploy lại mỗi khi push lên GitHub
     envVars:
       - key: DEMO_MODE
-        value: "false"          # LIVE: đọc Google Sheet thật + LLM bóc tách
+        value: "false"          # LIVE: đọc Google Sheet thật + LLM bóc tách      - key: BACKEND_SYNC_ENABLED
+        value: "false"
+
       - key: DATABASE_URL
         sync: false             # BÍ MẬT — nhập tay trong dashboard Render (không lưu vào repo)
+      - key: N8N_MANUAL_SYNC_WEBHOOK_URL
+        sync: false
       # Các biến LIVE đặt trong dashboard (sync:false cho secret):
       #   AUTH_REQUIRED = true
       #   SUPABASE_JWT_SECRET (sync:false)

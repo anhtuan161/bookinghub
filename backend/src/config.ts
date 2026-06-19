@@ -50,6 +50,8 @@ export const config = {
   syncIntervalMinutes: Number(process.env.SYNC_INTERVAL_MINUTES ?? 2),
   syncBatchSize: Number(process.env.SYNC_BATCH_SIZE ?? 2),
   syncWindowMonths: Number(process.env.SYNC_WINDOW_MONTHS ?? 6),
+  backendSyncEnabled: (process.env.BACKEND_SYNC_ENABLED ?? 'false').toLowerCase() === 'true',
+  n8nManualSyncWebhookUrl: process.env.N8N_MANUAL_SYNC_WEBHOOK_URL ?? '',
   reviewConfidence: Number(process.env.REVIEW_CONFIDENCE ?? 0.8),
   dataStaleMinutes: Number(process.env.DATA_STALE_MINUTES ?? 120),
 }

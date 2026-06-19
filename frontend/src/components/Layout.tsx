@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { getUser, logout } from '../lib/auth'
-import { reviewCount, syncNow } from '../lib/api'
+import { reviewCount, triggerN8nManualSync } from '../lib/api'
 import { showToast } from '../lib/toast'
 import { initials } from '../lib/utils'
 
@@ -27,9 +27,9 @@ export default function Layout() {
 
   async function handleSync() {
     setSyncing(true)
-    await syncNow()
+    await triggerN8nManualSync()
     setSyncing(false)
-    showToast('Đã đồng bộ dữ liệu mới nhất')
+    showToast('Da gui yeu cau chay n8n manual sync')
   }
 
   function handleLogout() {
@@ -94,7 +94,7 @@ export default function Layout() {
           <div className="flex items-center gap-4">
             <button onClick={handleSync} disabled={syncing} className="btn-primary">
               <span className={syncing ? 'animate-spin' : ''}>↻</span>
-              {syncing ? 'Đang đồng bộ…' : 'Đồng bộ ngay'}
+              {syncing ? 'Dang goi n8n...' : 'Chay n8n manual'}
             </button>
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">

@@ -585,6 +585,11 @@ export async function syncNow(target?: { sheetId?: string; propertyId?: string }
   return delay({ started: true }, 600)
 }
 
+export async function triggerN8nManualSync(): Promise<{ started: boolean }> {
+  if (API_URL) return http('/sync/n8n/manual', { method: 'POST' })
+  return delay({ started: true }, 600)
+}
+
 // Xu hướng nhu cầu theo tháng (số ngày đã đặt / tổng) — cho chart Tổng quan.
 export async function getTrend(): Promise<import('./types').TrendPoint[]> {
   if (API_URL) return http('/dashboard/trend')

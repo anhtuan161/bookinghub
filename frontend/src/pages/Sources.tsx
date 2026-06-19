@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Modal from '../components/Modal'
-import { addOwnerSheet, getSheets, syncNow } from '../lib/api'
+import { addOwnerSheet, getSheets, triggerN8nManualSync } from '../lib/api'
 import { showToast } from '../lib/toast'
 import type { Sheet } from '../lib/types'
 import { freshness } from '../lib/utils'
@@ -14,18 +14,18 @@ const SYNC_META: Record<Sheet['syncStatus'], { label: string; cls: string }> = {
 export default function Sources() {
   const [sheets, setSheets] = useState<Sheet[]>([])
   const [addOpen, setAddOpen] = useState(false)
-  const [syncingId, setSyncingId] = useState<string | null>(null)
+  const [syncingN8n, setSyncingN8n] = useState(false)
 
   function load() {
     getSheets().then(setSheets)
   }
   useEffect(load, [])
 
-  async function sync(id: string) {
-    setSyncingId(id)
-    await syncNow({ sheetId: id })
-    setSyncingId(null)
-    showToast('Đã đồng bộ')
+  async function runN8nManual() {
+    setSyncingN8n(true)
+    await triggerN8nManualSync()
+    setSyncingN8n(false)
+    showToast('Da gui yeu cau chay n8n manual sync')
     load()
   }
 
@@ -36,9 +36,14 @@ export default function Sources() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">Nguồn dữ liệu</h1>
           <p className="text-sm text-slate-500">Các Google Sheet của chủ nhà đang được đồng bộ.</p>
         </div>
-        <button onClick={() => setAddOpen(true)} className="btn-primary">
-          + Thêm chủ nhà
-        </button>
+        <div className="flex gap-2">
+          <button onClick={runN8nManual} disabled={syncingN8n} className="btn-primary">
+            {syncingN8n ? 'Dang goi n8n...' : 'Chay n8n manual'}
+          </button>
+          <button onClick={() => setAddOpen(true)} className="btn-ghost">
+            + Them chu nha
+          </button>
+        </div>
       </div>
 
       <div className="card overflow-hidden">
@@ -77,9 +82,6 @@ export default function Sources() {
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <a href={s.url} target="_blank" className="btn-ghost btn-sm">Mở sheet</a>
-                      <button onClick={() => sync(s.id)} disabled={syncingId === s.id} className="btn-primary btn-sm">
-                        {syncingId === s.id ? 'Đang…' : '↻ Đồng bộ ngay'}
-                      </button>
                     </div>
                   </td>
                 </tr>

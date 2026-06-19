@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Modal from '../components/Modal'
-import { createBookingRequest, getAvailability, getProperty, syncNow } from '../lib/api'
+import { createBookingRequest, getAvailability, getProperty } from '../lib/api'
 import { getUser } from '../lib/auth'
 import { showToast } from '../lib/toast'
 import type { AvailabilityDay, Channel, Property } from '../lib/types'
@@ -53,11 +53,6 @@ export default function PropertyDetail() {
       const d = new Date(c.y, c.m + delta, 1)
       return { y: d.getFullYear(), m: d.getMonth() }
     })
-  }
-
-  async function handleSync() {
-    await syncNow({ propertyId: property!.id })
-    showToast('Đã yêu cầu đồng bộ căn này')
   }
 
   return (
@@ -132,8 +127,7 @@ export default function PropertyDetail() {
             <span className="text-slate-300">•</span>
             <a href={property.sourceSheetUrl} target="_blank" className="font-medium text-brand-600 hover:underline">
               Mở sheet gốc
-            </a>
-            <button onClick={handleSync} className="btn-ghost btn-sm">↻ Đồng bộ căn này</button>
+            </a>
           </div>
           {fr.stale && (
             <div className="mt-3 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
