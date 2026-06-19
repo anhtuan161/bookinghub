@@ -20,6 +20,8 @@ create table if not exists sheets (
   url              text not null,
   spreadsheet_id   text not null,
   title            text,
+  city             text default 'Đà Lạt',
+  active           boolean default true,
   parent_sheet_id  text,
   parser_type      text default 'column_villas_month_tabs',
   parser_config    jsonb default '{}',
@@ -31,6 +33,8 @@ create table if not exists sheets (
 );
 alter table sheets add column if not exists parser_type   text default 'column_villas_month_tabs';
 alter table sheets add column if not exists parser_config jsonb default '{}';
+alter table sheets add column if not exists city          text default 'Đà Lạt';
+alter table sheets add column if not exists active        boolean default true;
 
 create table if not exists properties (
   id                 text primary key,

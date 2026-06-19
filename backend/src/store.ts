@@ -266,7 +266,7 @@ export function addBooking(payload: Omit<BookingRequest, 'id' | 'status' | 'crea
 let sheetSeq = sheets.length
 export function addSheet(payload: { ownerName: string; ownerPhone: string; url: string; commissionRate: number }): Sheet {
   const idMatch = payload.url.match(/\/d\/([a-zA-Z0-9_-]+)/)
-  const s: Sheet = { id: 's' + ++sheetSeq, ownerName: payload.ownerName, ownerPhone: payload.ownerPhone, url: payload.url, spreadsheetId: idMatch?.[1] ?? '', propertyCount: 0, syncStatus: 'needs_check', lastSyncedAt: new Date().toISOString(), assignee: '—', commissionRate: payload.commissionRate, parserType: 'column_villas_month_tabs', parserConfig: {}, colorMapping: {} }
+  const s: Sheet = { id: 's' + ++sheetSeq, ownerName: payload.ownerName, ownerPhone: payload.ownerPhone, url: payload.url, spreadsheetId: idMatch?.[1] ?? '', city: '\u0110\u00e0 L\u1ea1t', active: true, propertyCount: 0, syncStatus: 'needs_check', lastSyncedAt: new Date().toISOString(), assignee: '—', commissionRate: payload.commissionRate, parserType: 'column_villas_month_tabs', parserConfig: {}, colorMapping: {} }
   sheets.push(s)
   db.insertSheet(s)
   return s

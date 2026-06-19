@@ -84,6 +84,8 @@ export interface Sheet {
   ownerName: string
   ownerPhone: string
   url: string
+  city?: string
+  active?: boolean
   propertyCount: number
   syncStatus: 'ok' | 'error' | 'needs_check'
   lastSyncedAt: string

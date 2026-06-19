@@ -78,6 +78,8 @@ export interface Sheet {
   ownerPhone: string
   url: string
   spreadsheetId: string
+  city?: string
+  active?: boolean
   propertyCount: number
   syncStatus: 'ok' | 'error' | 'needs_check'
   lastSyncedAt: string

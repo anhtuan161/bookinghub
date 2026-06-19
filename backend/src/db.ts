@@ -54,9 +54,9 @@ async function seedIfEmpty() {
     log('Chưa có sheet → seed cấu hình sheet…')
     for (const s of sheets)
       await query(
-        `insert into sheets(id,url,spreadsheet_id,title,parser_type,parser_config,color_mapping,sync_status,last_synced_at,assignee)
-         values($1,$2,$3,$4,$5,$6,$7,$8,now(),$9) on conflict(id) do nothing`,
-        [s.id, s.url, s.spreadsheetId, s.ownerName, s.parserType ?? 'column_villas_month_tabs', J(s.parserConfig ?? {}), J(s.colorMapping), s.syncStatus, s.assignee],
+        `insert into sheets(id,url,spreadsheet_id,title,parser_type,parser_config,color_mapping,sync_status,last_synced_at,assignee,city,active)
+         values($1,$2,$3,$4,$5,$6,$7,$8,now(),$9,$10,$11) on conflict(id) do nothing`,
+        [s.id, s.url, s.spreadsheetId, s.ownerName, s.parserType ?? 'column_villas_month_tabs', J(s.parserConfig ?? {}), J(s.colorMapping), s.syncStatus, s.assignee, s.city ?? '\u0110\u00e0 L\u1ea1t', s.active ?? true],
       )
   }
 
@@ -124,6 +124,7 @@ async function hydrate() {
     for (const row of s.rows)
       sheets.push({
         id: row.id, ownerName: row.title ?? '', ownerPhone: '', url: row.url, spreadsheetId: row.spreadsheet_id,
+        city: row.city ?? '\u0110\u00e0 L\u1ea1t', active: row.active ?? true,
         propertyCount: 0, syncStatus: row.sync_status, lastSyncedAt: (row.last_synced_at ?? new Date()).toISOString(),
         assignee: row.assignee ?? '—', commissionRate: Number(row.commission_rate ?? 10),
         parserType: row.parser_type ?? 'column_villas_month_tabs',
@@ -223,9 +224,9 @@ export function updateBookingStatus(id: string, status: string) {
 export function insertSheet(s: Sheet) {
   if (!dbEnabled) return
   query(
-    `insert into sheets(id,url,spreadsheet_id,title,parser_type,parser_config,color_mapping,sync_status,last_synced_at,assignee)
-     values($1,$2,$3,$4,$5,$6,$7,$8,now(),$9)`,
-    [s.id, s.url, s.spreadsheetId, s.ownerName, s.parserType ?? 'column_villas_month_tabs', J(s.parserConfig ?? {}), J(s.colorMapping), s.syncStatus, s.assignee],
+    `insert into sheets(id,url,spreadsheet_id,title,parser_type,parser_config,color_mapping,sync_status,last_synced_at,assignee,city,active)
+     values($1,$2,$3,$4,$5,$6,$7,$8,now(),$9,$10,$11)`,
+    [s.id, s.url, s.spreadsheetId, s.ownerName, s.parserType ?? 'column_villas_month_tabs', J(s.parserConfig ?? {}), J(s.colorMapping), s.syncStatus, s.assignee, s.city ?? '\u0110\u00e0 L\u1ea1t', s.active ?? true],
   ).catch((e) => log('insertSheet', e.message))
 }
 
