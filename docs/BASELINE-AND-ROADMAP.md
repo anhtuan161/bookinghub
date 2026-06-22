@@ -769,3 +769,136 @@ chatbot creates booking requests for human confirmation
 5. Increase to `limit 3`, then `limit 5`.
 6. Add new sheets only with explicit `parser_type`.
 7. Plan Phase 3 backend direct DB reads before scaling heavily.
+
+## 15. Update Log - 2026-06-22
+
+Current working branch:
+
+```text
+docs/solution-review-claude
+```
+
+Latest relevant commits:
+
+```text
+e8623e6 Add n8n zero-row diagnostics
+5af51aa Add operator-friendly sheet parser profiles
+2361775 Fix n8n parsing for s2 day-only dates
+```
+
+### Confirmed Today
+
+```text
+s1 sync is working and produces correct data.
+s2 initially returned rows_parsed = 0.
+The zero-row diagnostic showed:
+  parser=column_villas_month_tabs
+  selected_tabs=THONG TIN|Thang 6/2026|Thang 7/2026|Thang 8/2026|Thang 9/2026
+  tabs_scanned=Thang 6/2026|Thang 7/2026|Thang 8/2026|Thang 9/2026
+  tabs_with_date_rows=none
+Root cause: s2 was using the wrong parser type.
+Fix: set s2 parser_type to weekday_day_columns_month_tabs.
+Result: s2 data started appearing after the parser_type was corrected.
+```
+
+### Important Operational Rule
+
+Do not modify parser logic for s1 when onboarding s2/s3/s4.
+
+Each sheet must be assigned the correct sheet profile:
+
+```text
+Mau A - ngay 01/07
+  parser_type = column_villas_month_tabs
+  Use for sheets like s1.
+
+Mau B - cot Thu/Ngay
+  parser_type = weekday_day_columns_month_tabs
+  Use for sheets like s2, where the tab title contains month/year and the date column contains day numbers 1..31.
+
+Chua biet - can setup
+  parser_type = needs_manual_mapping
+  Use for sheets that do not clearly match A or B.
+```
+
+The preferred way to update parser type is the UI `Nguon du lieu` -> column `Mau sheet`.
+Direct SQL should only be used as a temporary repair path.
+
+Temporary SQL repair example:
+
+```sql
+update sheets
+set parser_type = 'weekday_day_columns_month_tabs',
+    parser_config = coalesce(parser_config, '{}'::jsonb)
+where id = 's2';
+```
+
+### n8n Diagnostic Added
+
+The `Normalize Villas And Calendar` node now writes a useful `error_sql` when `rows_parsed = 0`.
+
+Example:
+
+```text
+no_rows_parsed;
+parser=column_villas_month_tabs;
+selected_tabs=...;
+tabs_scanned=...;
+tabs_with_date_rows=none;
+tabs_without_date_rows=...
+```
+
+How to interpret:
+
+```text
+parser=wrong value
+  The sheet is using the wrong profile.
+
+selected_tabs=none
+  Build Ranged Google API Request did not detect month tabs.
+
+tabs_scanned has tabs but tabs_with_date_rows=none
+  The parser could not identify date rows in the selected tabs.
+
+tabs_with_date_rows has tabs but rows_parsed=0
+  The parser found dates but did not identify property/villa columns.
+```
+
+### Procedure For s3/s4/s5 And The Next 10 Sheets
+
+Use a one-sheet-at-a-time onboarding loop:
+
+```text
+1. Add or verify the sheet exists in DB/UI.
+2. Choose Mau sheet in UI.
+3. In n8n Load Active Sheets From DB, set only_sheet_ids to the target sheet id, for example 's3'.
+4. Run manual n8n.
+5. Check Normalize output:
+   - rows_parsed > 0
+   - rows_review is reasonable
+   - error_sql is empty or understandable
+6. Check DB counts by source_sheet_id.
+7. Verify sample dates against the Google Sheet screenshot.
+8. Only then move to the next sheet.
+```
+
+Do not run all 10 new sheets in one batch until each sheet has passed the one-sheet test.
+
+### Current Priority
+
+Next engineering priority remains:
+
+```text
+R1 - Backend/UI stale data risk.
+```
+
+n8n writes directly to Postgres, while parts of the backend still serve hydrated in-memory state.
+Before scaling to many sheets or chatbot usage, either:
+
+```text
+1. make read endpoints query Postgres directly for live availability/search data, or
+2. make n8n call POST /data/reload after sync, or
+3. add a short backend auto-refresh interval.
+```
+
+Preferred direction: make availability/search read from Postgres directly in production.
