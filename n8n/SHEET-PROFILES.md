@@ -33,6 +33,26 @@ Khong can nho ma ky thuat. Tren UI chi can chon theo hinh dang sheet:
 - `Mau B` moi doc ngay dang so don `1..31`, va chi doc khi hang do co `T2..T7` hoac `CN` ben canh.
 - `Chua biet` se bi n8n bo qua va ghi trang thai can setup, tranh day du lieu sai vao DB.
 
+## Khi n8n bao rows_parsed = 0
+
+Neu output sync tra ve `rows_parsed = 0`, khong tiep tuc import them sheet khac. Kiem tra theo thu tu:
+
+1. Mo node `Build Google API Request`, xem `parser_type`.
+   - Sheet giong s1 phai la `column_villas_month_tabs`.
+   - Sheet giong s2 phai la `weekday_day_columns_month_tabs`.
+   - Neu s2 van la `column_villas_month_tabs`, parser se khong doc cot `Ngay` dang so `1..31`.
+2. Mo node `Build Ranged Google API Request`, xem `selected_tabs`.
+   - Neu `selected_tabs` rong hoac chi co `Thong tin`, ten tab thang khong duoc nhan dien.
+   - Tab thang nen co dang `Thang 7/2026`, `07.2026`, `07/2026`.
+3. Mo node `Read Sheet With Cell Colors`, xem co tra ve `sheets[].data[].rowData` khong.
+   - Neu khong co rowData, Google API dang khong doc dung range/tab.
+4. Mo node `Normalize Villas And Calendar`, xem `error_sql`.
+   - Workflow moi se ghi them `parser`, `selected_tabs`, `tabs_scanned`, `tabs_with_date_rows`.
+   - Neu `tabs_with_date_rows=none`, loi nam o viec nhan dien ngay.
+   - Neu co date rows nhung van 0, loi nam o viec nhan dien cot villa/property.
+
+Voi sheet s2 Hoang Cuong, nguyen nhan thuong gap nhat la DB chua gan dung Mau B. Sua bang UI `Nguon du lieu` -> cot `Mau sheet` -> chon `Mau B - cot Thu/Ngay`, sau do chay lai `only_sheet_ids = 's2'`.
+
 ## Khi gap s3/s4/s5
 
 - Giong s1: chon `Mau A`.
