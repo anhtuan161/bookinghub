@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Modal from '../components/Modal'
 import { addOwnerSheet, getSheets, triggerN8nManualSync, updateOwnerSheet } from '../lib/api'
 import { onDbRefresh } from '../lib/refresh'
-import { DEFAULT_SHEET_PROFILE, SHEET_PROFILES, sheetProfileLabel } from '../lib/sheetProfiles'
+import { DEFAULT_SHEET_PROFILE, SHEET_PROFILES, sheetProfileFor } from '../lib/sheetProfiles'
 import { showToast } from '../lib/toast'
 import type { Sheet } from '../lib/types'
 import { freshness } from '../lib/utils'
@@ -13,14 +13,21 @@ const SYNC_META: Record<Sheet['syncStatus'], { label: string; cls: string }> = {
   error: { label: 'Lỗi', cls: 'bg-red-100 text-red-700' },
 }
 
+type PendingProfileChange = {
+  sheet: Sheet
+  nextParserType: string
+}
+
 export default function Sources() {
   const [sheets, setSheets] = useState<Sheet[]>([])
   const [addOpen, setAddOpen] = useState(false)
   const [syncingN8n, setSyncingN8n] = useState(false)
+  const [pendingProfile, setPendingProfile] = useState<PendingProfileChange | null>(null)
 
   function load() {
     getSheets().then(setSheets)
   }
+
   useEffect(() => {
     load()
     return onDbRefresh(load)
@@ -30,30 +37,44 @@ export default function Sources() {
     setSyncingN8n(true)
     await triggerN8nManualSync()
     setSyncingN8n(false)
-    showToast('Da gui yeu cau chay n8n manual sync')
+    showToast('Đã gửi yêu cầu chạy n8n manual sync')
     load()
   }
 
-  async function updateSheetProfile(sheet: Sheet, parserType: string) {
-    await updateOwnerSheet(sheet.id, { parserType })
-    showToast('Da cap nhat mau sheet')
+  async function confirmProfileChange() {
+    if (!pendingProfile) return
+    await updateOwnerSheet(pendingProfile.sheet.id, { parserType: pendingProfile.nextParserType })
+    setPendingProfile(null)
+    showToast('Đã cập nhật mẫu sheet')
     load()
+  }
+
+  function requestProfileChange(sheet: Sheet, nextParserType: string) {
+    if ((sheet.parserType || DEFAULT_SHEET_PROFILE) === nextParserType) return
+    setPendingProfile({ sheet, nextParserType })
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="mb-5 flex items-center justify-between">
+    <div className="mx-auto max-w-6xl">
+      <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">Nguồn dữ liệu</h1>
-          <p className="text-sm text-slate-500">Các Google Sheet của chủ nhà đang được đồng bộ.</p>
+          <p className="text-sm text-slate-500">Quản lý Google Sheet chủ nhà và mẫu đọc dữ liệu cho từng sheet.</p>
         </div>
         <div className="flex gap-2">
           <button onClick={runN8nManual} disabled={syncingN8n} className="btn-primary">
-            {syncingN8n ? 'Dang goi n8n...' : 'Chay n8n manual'}
+            {syncingN8n ? 'Đang gọi n8n...' : 'Chạy n8n manual'}
           </button>
           <button onClick={() => setAddOpen(true)} className="btn-ghost">
-            + Them chu nha
+            + Thêm chủ nhà
           </button>
+        </div>
+      </div>
+
+      <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="font-semibold">Lưu ý khi chọn mẫu sheet</div>
+        <div className="mt-1 text-amber-800">
+          Chọn sai mẫu có thể làm n8n đọc sai lịch. Nếu chưa chắc, để "Chưa biết - cần setup" rồi nhờ kỹ thuật kiểm tra trước khi sync.
         </div>
       </div>
 
@@ -73,39 +94,46 @@ export default function Sources() {
           <tbody>
             {sheets.map((s) => {
               const fr = freshness(s.lastSyncedAt)
+              const profile = sheetProfileFor(s.parserType)
               return (
                 <tr key={s.id} className={`border-t border-slate-100 ${s.syncStatus === 'error' ? 'bg-red-50/40' : ''}`}>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 align-top">
                     <div className="font-semibold text-slate-700">{s.ownerName}</div>
                     <div className="text-xs text-slate-400">{s.ownerPhone} • HH {s.commissionRate}%</div>
                     {s.lastError && <div className="mt-1 text-xs text-red-600">⚠ {s.lastError}</div>}
                   </td>
-                  <td className="px-4 py-3">{s.propertyCount}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 align-top">{s.propertyCount}</td>
+                  <td className="px-4 py-3 align-top">
                     <span className={`badge ${SYNC_META[s.syncStatus].cls}`}>{SYNC_META[s.syncStatus].label}</span>
                   </td>
-                  <td className="px-4 py-3">
-                    <select
-                      className="input h-9 min-w-[210px] text-xs"
-                      value={s.parserType || DEFAULT_SHEET_PROFILE}
-                      title={sheetProfileLabel(s.parserType)}
-                      onChange={(e) => updateSheetProfile(s, e.target.value)}
-                    >
-                      {SHEET_PROFILES.map((profile) => (
-                        <option key={profile.value} value={profile.value}>
-                          {profile.label}
-                        </option>
-                      ))}
-                    </select>
+                  <td className="px-4 py-3 align-top">
+                    <div className="min-w-[290px]">
+                      <select
+                        className="input h-10 text-sm"
+                        value={s.parserType || DEFAULT_SHEET_PROFILE}
+                        title={profile.description}
+                        onChange={(e) => requestProfileChange(s, e.target.value)}
+                      >
+                        {SHEET_PROFILES.map((item) => (
+                          <option key={item.value} value={item.value}>
+                            {item.label}
+                          </option>
+                        ))}
+                      </select>
+                      <div className={`mt-2 rounded-lg px-3 py-2 text-xs ${profile.value === 'needs_manual_mapping' ? 'bg-amber-50 text-amber-800' : 'bg-slate-50 text-slate-600'}`}>
+                        <div className="font-semibold">{profile.shortLabel}</div>
+                        <div className="mt-0.5">{profile.example}</div>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 align-top">
                     <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
                       <span className={`h-2 w-2 rounded-full ${fr.dot}`} />
                       {fr.label}
                     </span>
                   </td>
-                  <td className="px-4 py-3">{s.assignee}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 align-top">{s.assignee}</td>
+                  <td className="px-4 py-3 align-top">
                     <div className="flex justify-end gap-2">
                       <a href={s.url} target="_blank" className="btn-ghost btn-sm">Mở sheet</a>
                     </div>
@@ -125,12 +153,53 @@ export default function Sources() {
           load()
         }}
       />
+
+      <ConfirmProfileModal
+        pending={pendingProfile}
+        onClose={() => setPendingProfile(null)}
+        onConfirm={confirmProfileChange}
+      />
     </div>
+  )
+}
+
+function ConfirmProfileModal({
+  pending,
+  onClose,
+  onConfirm,
+}: {
+  pending: PendingProfileChange | null
+  onClose: () => void
+  onConfirm: () => void
+}) {
+  const current = sheetProfileFor(pending?.sheet.parserType)
+  const next = sheetProfileFor(pending?.nextParserType)
+
+  return (
+    <Modal open={Boolean(pending)} title="Xác nhận đổi mẫu sheet" onClose={onClose}>
+      <div className="space-y-4 text-sm text-slate-600">
+        <p>
+          Bạn đang đổi mẫu đọc dữ liệu cho <span className="font-semibold text-slate-800">{pending?.sheet.ownerName}</span>.
+        </p>
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <div>Hiện tại: <span className="font-semibold text-slate-800">{current.label}</span></div>
+          <div>Đổi sang: <span className="font-semibold text-slate-800">{next.label}</span></div>
+        </div>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+          Sau khi đổi mẫu, hãy chạy n8n riêng sheet này và kiểm tra số căn, ngày booked/trống, giá trước khi chạy batch.
+        </div>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="btn-ghost">Hủy</button>
+          <button type="button" onClick={onConfirm} className="btn-primary">Đổi mẫu sheet</button>
+        </div>
+      </div>
+    </Modal>
   )
 }
 
 function AddModal({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({ ownerName: '', ownerPhone: '', url: '', commissionRate: 10, parserType: DEFAULT_SHEET_PROFILE })
+  const selectedProfile = sheetProfileFor(form.parserType)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -167,12 +236,13 @@ function AddModal({ open, onClose, onSaved }: { open: boolean; onClose: () => vo
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-slate-500">
-            Chọn theo hình dạng Google Sheet. Nếu chưa chắc, dùng "Chưa biết" để tránh sync sai.
-          </p>
+          <div className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            <div className="font-semibold">{selectedProfile.shortLabel}</div>
+            <div className="mt-0.5">{selectedProfile.description}</div>
+          </div>
         </L>
         <div className="rounded-lg bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
-          Sau khi thêm, nhớ chia sẻ sheet cho tài khoản hệ thống (quyền Xem) để đồng bộ được.
+          Sau khi thêm, nhớ chia sẻ sheet cho tài khoản hệ thống quyền xem. Nếu chưa chắc mẫu sheet, để "Chưa biết - cần setup".
         </div>
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-ghost">Hủy</button>
