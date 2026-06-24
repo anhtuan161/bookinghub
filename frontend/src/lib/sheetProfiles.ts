@@ -1,24 +1,24 @@
 export const SHEET_PROFILES = [
   {
     value: 'column_villas_month_tabs',
-    label: 'Mẫu A - lịch ngang',
-    shortLabel: 'Lịch ngang, ngày 01/07',
-    description: 'Dùng khi mỗi cột là một căn, mỗi dòng là một ngày dạng 01/07 hoặc 19/07.',
-    example: 'Nhìn thấy cột Ngày có 01/07, 02/07, 19/07.',
+    label: 'Giống Mẹ Bắp',
+    shortLabel: 'Đã chạy đúng với sheet Mẹ Bắp',
+    description: 'Chọn mục này khi sheet mới nhìn giống file Mẹ Bắp đã test thành công.',
+    example: 'Không chắc thì không chọn mục này. Hãy để "Không chắc - nhờ kỹ thuật".',
   },
   {
     value: 'weekday_day_columns_month_tabs',
-    label: 'Mẫu B - có cột Thứ/Ngày',
-    shortLabel: 'Có cột Thứ/Ngày',
-    description: 'Dùng khi sheet có cột Thứ và cột Ngày chỉ là số 1-31, tháng nằm ở tên tab.',
-    example: 'Nhìn thấy T2, T3, CN bên cạnh ngày 1, 2, 3.',
+    label: 'Giống Hoàng Cường',
+    shortLabel: 'Đã chạy đúng với sheet Hoàng Cường',
+    description: 'Chọn mục này khi sheet mới nhìn giống file Hoàng Cường đã test thành công.',
+    example: 'Không chắc thì không chọn mục này. Hãy để "Không chắc - nhờ kỹ thuật".',
   },
   {
     value: 'needs_manual_mapping',
-    label: 'Chưa biết - cần setup',
-    shortLabel: 'Chưa biết, chưa sync',
-    description: 'Dùng khi chưa chắc sheet giống mẫu nào. Hệ thống sẽ không sync để tránh sai dữ liệu.',
-    example: 'Chọn mục này nếu cần kỹ thuật kiểm tra trước.',
+    label: 'Không chắc - nhờ kỹ thuật',
+    shortLabel: 'An toàn: chưa đồng bộ sheet này',
+    description: 'Chọn mục này khi nhân viên không chắc sheet giống file nào. Hệ thống sẽ không sync để tránh sai dữ liệu.',
+    example: 'Đây là lựa chọn an toàn nhất cho sheet mới hoặc sheet lạ.',
   },
 ] as const
 

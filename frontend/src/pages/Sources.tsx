@@ -59,7 +59,7 @@ export default function Sources() {
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">Nguồn dữ liệu</h1>
-          <p className="text-sm text-slate-500">Quản lý Google Sheet chủ nhà và mẫu đọc dữ liệu cho từng sheet.</p>
+          <p className="text-sm text-slate-500">Quản lý Google Sheet chủ nhà và cách hệ thống đọc lịch từng sheet.</p>
         </div>
         <div className="flex gap-2">
           <button onClick={runN8nManual} disabled={syncingN8n} className="btn-primary">
@@ -72,9 +72,9 @@ export default function Sources() {
       </div>
 
       <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <div className="font-semibold">Lưu ý khi chọn mẫu sheet</div>
+        <div className="font-semibold">Chọn theo file mẫu đã chạy đúng</div>
         <div className="mt-1 text-amber-800">
-          Chọn sai mẫu có thể làm n8n đọc sai lịch. Nếu chưa chắc, để "Chưa biết - cần setup" rồi nhờ kỹ thuật kiểm tra trước khi sync.
+          Nhân viên không cần hiểu cấu trúc sheet. Nếu file mới nhìn giống Mẹ Bắp thì chọn Mẹ Bắp, giống Hoàng Cường thì chọn Hoàng Cường. Không chắc thì chọn "Không chắc - nhờ kỹ thuật".
         </div>
       </div>
 
@@ -85,7 +85,7 @@ export default function Sources() {
               <th className="px-4 py-3">Chủ nhà</th>
               <th className="px-4 py-3">Số villa</th>
               <th className="px-4 py-3">Trạng thái</th>
-              <th className="px-4 py-3">Mẫu sheet</th>
+              <th className="px-4 py-3">Cách đọc lịch</th>
               <th className="px-4 py-3">Cập nhật</th>
               <th className="px-4 py-3">Phụ trách</th>
               <th className="px-4 py-3 text-right">Thao tác</th>
@@ -176,21 +176,21 @@ function ConfirmProfileModal({
   const next = sheetProfileFor(pending?.nextParserType)
 
   return (
-    <Modal open={Boolean(pending)} title="Xác nhận đổi mẫu sheet" onClose={onClose}>
+    <Modal open={Boolean(pending)} title="Xác nhận đổi cách đọc lịch" onClose={onClose}>
       <div className="space-y-4 text-sm text-slate-600">
         <p>
-          Bạn đang đổi mẫu đọc dữ liệu cho <span className="font-semibold text-slate-800">{pending?.sheet.ownerName}</span>.
+          Bạn đang đổi cách hệ thống đọc lịch cho <span className="font-semibold text-slate-800">{pending?.sheet.ownerName}</span>.
         </p>
         <div className="rounded-lg bg-slate-50 px-3 py-2">
           <div>Hiện tại: <span className="font-semibold text-slate-800">{current.label}</span></div>
           <div>Đổi sang: <span className="font-semibold text-slate-800">{next.label}</span></div>
         </div>
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
-          Sau khi đổi mẫu, hãy chạy n8n riêng sheet này và kiểm tra số căn, ngày booked/trống, giá trước khi chạy batch.
+          Nếu chọn sai, hệ thống có thể đọc sai lịch. Sau khi đổi, hãy chạy n8n riêng sheet này và kiểm tra lại dữ liệu trước khi chạy nhiều sheet.
         </div>
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-ghost">Hủy</button>
-          <button type="button" onClick={onConfirm} className="btn-primary">Đổi mẫu sheet</button>
+          <button type="button" onClick={onConfirm} className="btn-primary">Đổi cách đọc lịch</button>
         </div>
       </div>
     </Modal>
@@ -228,7 +228,7 @@ function AddModal({ open, onClose, onSaved }: { open: boolean; onClose: () => vo
         <L label="Hoa hồng (%)">
           <input type="number" className="input" value={form.commissionRate} onChange={(e) => setForm({ ...form, commissionRate: Number(e.target.value) })} />
         </L>
-        <L label="Mẫu sheet">
+        <L label="Cách đọc lịch">
           <select className="input" value={form.parserType} onChange={(e) => setForm({ ...form, parserType: e.target.value })}>
             {SHEET_PROFILES.map((profile) => (
               <option key={profile.value} value={profile.value}>
@@ -242,7 +242,7 @@ function AddModal({ open, onClose, onSaved }: { open: boolean; onClose: () => vo
           </div>
         </L>
         <div className="rounded-lg bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
-          Sau khi thêm, nhớ chia sẻ sheet cho tài khoản hệ thống quyền xem. Nếu chưa chắc mẫu sheet, để "Chưa biết - cần setup".
+          Sau khi thêm, nhớ chia sẻ sheet cho tài khoản hệ thống quyền xem. Nếu chưa chắc file giống mẫu nào, để "Không chắc - nhờ kỹ thuật".
         </div>
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-ghost">Hủy</button>
