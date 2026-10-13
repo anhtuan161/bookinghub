@@ -114,7 +114,7 @@ export default function Revenue() {
                 ))}
               </div>
             </div>
-            <div className="flex h-56 items-end gap-2">
+            <div className="flex items-end gap-2">
               {data.monthly.map((m) => (
                 <button
                   key={m.month}
@@ -123,7 +123,7 @@ export default function Revenue() {
                   title={`${m.month}: ${money(m.revenue)} · ${m.soldNights} đêm · ${pct(m.occupancy)}`}
                 >
                   <span className="text-[10px] font-semibold tabular-nums text-slate-500">{m.revenue ? shortMoney(m.revenue) : ''}</span>
-                  <div className="flex w-full max-w-[44px] flex-1 flex-col-reverse overflow-hidden rounded-md bg-slate-100">
+                  <div className="flex h-44 w-full max-w-[44px] flex-col-reverse overflow-hidden rounded-md bg-slate-100">
                     {(['short', 'mid', 'long'] as const).map((s) => (
                       <div key={s} className={SEG_COLOR[s]} style={{ height: `${((m.bySegment[s] ?? 0) / maxRev) * 100}%` }} />
                     ))}
@@ -176,10 +176,10 @@ export default function Revenue() {
             {!daily ? (
               <div className="text-sm text-slate-400">Đang tải…</div>
             ) : (
-              <div className="flex h-40 items-end gap-[3px]">
+              <div className="flex items-end gap-[3px]">
                 {daily.days.map((d) => (
                   <div key={d.day} className="flex flex-1 flex-col items-center gap-1" title={`${dmy(d.day)}: ${money(d.revenue)} · ${d.sold} phòng (${pct(d.occupancy)}) · đến ${d.arrivals} / đi ${d.departures}`}>
-                    <div className="flex w-full flex-1 items-end rounded-sm bg-slate-100">
+                    <div className="flex h-32 w-full items-end rounded-sm bg-slate-100">
                       <div className={`w-full rounded-sm ${d.revenue ? 'bg-brand-500' : 'bg-amber-300'}`} style={{ height: `${Math.max(d.sold ? 4 : 0, (d.revenue / maxDay) * 100)}%` }} />
                     </div>
                     <span className="text-[9px] text-slate-400">{d.day.slice(8)}</span>

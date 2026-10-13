@@ -136,11 +136,11 @@ export default function Overview() {
                 </Link>
               )}
             </div>
-            <div className="flex h-40 items-end gap-1.5">
+            <div className="flex items-end gap-1.5">
               {data.forecast.map((f) => (
                 <div key={f.day} className="group flex flex-1 flex-col items-center gap-1" title={`${dm(f.day)}: ${f.occupied}/${data.rooms} phòng, ${f.arrivals} khách đến${can(user, 'coliving.revenue') ? `, ${money(f.revenue)}` : ''}`}>
                   <span className="text-[10px] font-semibold tabular-nums text-slate-500">{pct(f.occupancy)}</span>
-                  <div className="flex w-full flex-1 items-end rounded-md bg-slate-100">
+                  <div className="flex h-28 w-full items-end rounded-md bg-slate-100">
                     <div className={`w-full rounded-md ${f.occupancy >= 0.8 ? 'bg-emerald-500' : f.occupancy >= 0.5 ? 'bg-brand-500' : 'bg-amber-400'}`} style={{ height: `${(f.occupied / maxF) * 100}%` }} />
                   </div>
                   <span className={`text-[10px] ${f.day === data.day ? 'font-bold text-slate-800' : 'text-slate-400'}`}>{dm(f.day)}</span>
