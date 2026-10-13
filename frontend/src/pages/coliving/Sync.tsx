@@ -123,6 +123,11 @@ export default function Sync() {
                     Chép lệnh
                   </button>
                 </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  Chrome chặn dán lần đầu: gõ tay <code className="rounded bg-white px-1">allow pasting</code> rồi Enter, sau đó dán lại lệnh.
+                  Hoặc không cần Console: tab <b>Application</b> → <b>Local storage</b> → <code>https://pms.ezcloudhotel.com</code> → dòng{' '}
+                  <code>ngStorage-session</code> → bấm vào ô Value, Ctrl+A, Ctrl+C.
+                </div>
               </li>
               <li>Quay lại đây, dán (Ctrl+V) vào ô dưới rồi bấm Lưu. Sau đó đóng tab ezCloud của bot, đừng mở lại để tránh 2 nơi cùng làm mới token.</li>
             </ol>
