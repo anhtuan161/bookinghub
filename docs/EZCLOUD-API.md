@@ -61,6 +61,8 @@ Quan sat: booking dai han gia 0 nhung co **khoan thu that** (vd P201 thu 6.000.0
 | Check-in | `POST api/Booking/Checkin?reservationRoomId=<id>` body rong `""` | OK: `{success:true,data:{RoomId,RoomName}}`. Phong dang bi booking khac chiem: `{success:false,message:"Xung đột với booking khác!",data:{ReservationRoomId,BookingStatus,ArrivalDate,DepartureDate,Rooms:{RoomName}}}` (vd #41774181 P202 CHECKIN tu 07/2026 chua check-out). |
 | Check-in muon (da qua ngay den) | ezCloud **doi ArrivalDate = luc check-in**, chi con dem tu hom nay; web ezCloud (IsOffNoshow=false) roi goi `POST api/Booking/AddExtraService` `[{ReservationRoomId,RoomExtraServiceName:"EXTRA_SERVICES",RoomExtraServiceDescription:"Phòng cả ngày dd/mm/yyyy - dd/mm/yyyy",Amount:<tong gia cac dem da qua>,Quantity:1}]` (POST gui ngay, hop thoai chi de xem) | Webapp lam y het. Sync doc dich vu "Phong ca ngay ..." -> chia tien vao tung dem + `stay_from` giu ngay o that. => NHAP GIA TRUOC KHI CHECK-IN, neu khong dich vu = 0d. |
 
+Cau hinh gia (doc `GET api/Config/RoomTypes/GetAllRoomTypeTimeVer3`): moi loai gia cua tung hang phong co `UseWeeklyPrice/WeeklyPrice`, `UseMonthlyPrice/MonthlyPrice` (2026-10-13: deu TAT). Trang cau hinh `#/config/RoomTypeVer3` - tai khoan bot KHONG co quyen ("Khong du quyen truy cap"), user dung tai khoan chu. Bat gia thang -> tien phong co dong `Type: MONTH_PRICE` (StartDate..EndDate) -> sync chia deu vao cac dem; webapp "Nhap gia" chi sua DAY_PRICE (booking co WEEK/MONTH_PRICE -> sua tren ezCloud).
+
 Chua do / KHONG goi: check-out (`Booking/Checkout`?), doi phong, huy, them thanh toan, sua dich vu.
 
 ## Endpoint chua dung (ung vien cho bao cao thu tien)
