@@ -49,6 +49,8 @@ export const config = {
   // ====== Thomstay Coliving: ezCloud PMS (API nội bộ, chỉ ĐỌC) ======
   ezcloudBaseUrl: (process.env.EZCLOUD_BASE_URL ?? 'https://pms.ezcloudhotel.com').replace(/\/+$/, ''),
   ezcloudSyncMinutes: Number(process.env.EZCLOUD_SYNC_MINUTES ?? 15),
+  // Chỉ đồng bộ booking có ngày đi >= hôm nay - N ngày (đang ở, sắp tới, vừa đi). Cũ hơn: giữ bản đã lưu, không cập nhật.
+  ezcloudWindowDays: Number(process.env.EZCLOUD_WINDOW_DAYS ?? 30),
   ezcloudChargesPerRun: Number(process.env.EZCLOUD_CHARGES_PER_RUN ?? 400),
   ezcloudRequestGapMs: Number(process.env.EZCLOUD_REQUEST_GAP_MS ?? 300),
   telegramBotToken: secret('TELEGRAM_BOT_TOKEN'),

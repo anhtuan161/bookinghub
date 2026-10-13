@@ -76,6 +76,7 @@ export interface SyncState {
   stale: boolean
   pendingRequests: number
   intervalMinutes: number
+  windowDays?: number
 }
 
 export interface ClEvent {

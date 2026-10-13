@@ -172,7 +172,9 @@ async function runSyncLocked(trigger: string): Promise<SyncStats> {
     client = await EzClient.fromStore()
 
     // ---------- 1. Booking ----------
-    const rows = (await client.allBookings()).map(mapRow).filter((m) => m.reservation_room_id)
+    // Phạm vi: ngày đi >= hôm nay - EZCLOUD_WINDOW_DAYS. Booking cũ hơn giữ nguyên trong DB, không cập nhật.
+    const windowStart = addDay(todayLocal(), -Math.max(1, config.ezcloudWindowDays))
+    const rows = (await client.bookingsDepartingFrom(windowStart)).map(mapRow).filter((m) => m.reservation_room_id)
     stats.fetched = rows.length
     if (rows.length === 0) throw new Error('ezCloud trả 0 booking — dừng để tránh đánh dấu xoá nhầm')
 
@@ -180,6 +182,8 @@ async function runSyncLocked(trigger: string): Promise<SyncStats> {
     for (const r of await q<any>(`select ${WATCH.join(',')}, reservation_room_id, reservation_number, hash, missing_since from cl_bookings`))
       existing.set(Number(r.reservation_room_id), r)
     stats.baseline = existing.size === 0
+    // chỉ xét "bị xoá" với booking nằm trong phạm vi đồng bộ
+    const inWindow = (r: any) => !r.departure_date || String(r.departure_date) >= windowStart
 
     await tx(async (c) => {
       for (const m of rows) {
@@ -238,7 +242,7 @@ async function runSyncLocked(trigger: string): Promise<SyncStats> {
       // Booking không còn trên ezCloud (bị xoá) → đánh dấu, không xoá dữ liệu.
       const seen = new Set(rows.map((r) => r.reservation_room_id))
       for (const [id, old] of existing) {
-        if (seen.has(id) || old.missing_since) continue
+        if (seen.has(id) || old.missing_since || !inWindow(old)) continue
         await c.query('update cl_bookings set missing_since = now() where reservation_room_id = $1', [id])
         await c.query('insert into cl_booking_events(reservation_room_id, kind, summary) values($1,$2,$3)', [
           id, 'removed', `Không còn trên ezCloud (bị xoá?): ${describe(old)}`,
@@ -253,12 +257,13 @@ async function runSyncLocked(trigger: string): Promise<SyncStats> {
     const need = await q<any>(
       `select reservation_room_id, hash from cl_bookings
         where missing_since is null
+          and departure_date >= $3::date
           and (charges_hash is distinct from hash
                or details_synced_at is null
                or (coalesce(status,'') not in ('CANCELLED','NOSHOW') and departure_date >= $1::date - 7
                    and (charges_synced_at is null or charges_synced_at < now() - interval '20 hours')))
         order by departure_date desc nulls last limit $2`,
-      [today, config.ezcloudChargesPerRun],
+      [today, config.ezcloudChargesPerRun, windowStart],
     )
     for (const b of need) {
       try {

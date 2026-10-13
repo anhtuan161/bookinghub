@@ -18,6 +18,7 @@ x-app: &app
     COOKIE_SECURE: "${COOKIE_SECURE:-false}"
     TRUST_PROXY: "${TRUST_PROXY:-false}"
     EZCLOUD_SYNC_MINUTES: "${EZCLOUD_SYNC_MINUTES:-15}"
+    EZCLOUD_WINDOW_DAYS: "${EZCLOUD_WINDOW_DAYS:-30}"   # chi dong bo booking co ngay di >= hom nay - N ngay
     EZCLOUD_CHARGES_PER_RUN: "${EZCLOUD_CHARGES_PER_RUN:-60}"   # so booking lay chi tiet moi luot (giam tai ezCloud)
     EZCLOUD_REQUEST_GAP_MS: "${EZCLOUD_REQUEST_GAP_MS:-1000}"   # cach nhau giua cac request
     EZCLOUD_WRITE_ENABLED: "${EZCLOUD_WRITE_ENABLED:-false}"   # ghi len ezCloud (nhap gia, check-in); true trong .env stack

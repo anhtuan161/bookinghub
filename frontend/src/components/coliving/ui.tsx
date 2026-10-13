@@ -95,6 +95,7 @@ export function SyncBar({ state: given }: { state?: SyncState | null }) {
         <span className={`mr-1.5 inline-block h-2 w-2 rounded-full ${state.stale ? 'bg-amber-500' : 'bg-emerald-500'}`} />
         Đồng bộ ezCloud lần cuối: <b>{dateTime(state.lastOkAt)}</b> (mỗi {state.intervalMinutes} phút)
       </span>
+      {state.windowDays ? <span>Phạm vi: booking có ngày đi trong {state.windowDays} ngày qua trở đi (cũ hơn giữ bản đã lưu, không cập nhật)</span> : null}
       {state.ezcloud.lastError && <span>Lỗi gần nhất: {state.ezcloud.lastError}</span>}
       {manage && (state.stale || state.ezcloud.lastError) && (
         <Link to="/coliving/sync" className="font-semibold underline">

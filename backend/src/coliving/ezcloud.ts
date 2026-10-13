@@ -201,7 +201,8 @@ export class EzClient {
     return this.call<any>('api/Hotel/GetCurrentHotel')
   }
 
-  async allBookings(pageSize = 500): Promise<any[]> {
+  // Booking có ngày đi >= departureFrom (YYYY-MM-DD). Đã kiểm chứng: lọc DepartureDateFrom vẫn giữ khách dài hạn đến từ lâu.
+  async bookingsDepartingFrom(departureFrom: string, pageSize = 500): Promise<any[]> {
     const out: any[] = []
     for (let page = 1; page <= 50; page++) {
       const body = {
@@ -210,8 +211,8 @@ export class EzClient {
         ReservationNumber: '', OtaNumber: '', RoomName: '', Adults: '', Children: '', CountryId: null,
         SourceIds: [], CompanyIds: [], MarketIds: [], BookingStatus: [], CommissionType: [],
         BirthDayFrom: null, BirthDayTo: null, OccupiedNightFrom: null, OccupiedNightTo: null,
-        ArrivalDateFrom: '2015-01-01T00:00:00', ArrivalDateTo: `${new Date().getFullYear() + 3}-12-31T23:59:00`,
-        DepartureDateFrom: null, DepartureDateTo: null, CreatedUser: [], CreatedDateFrom: null, CreatedDateTo: null,
+        ArrivalDateFrom: null, ArrivalDateTo: null,
+        DepartureDateFrom: `${departureFrom}T00:00:00`, DepartureDateTo: `${new Date().getFullYear() + 3}-12-31T23:59:00`, CreatedUser: [], CreatedDateFrom: null, CreatedDateTo: null,
         CancelUser: [], CancelDateFrom: null, CancelDateTo: null,
         pageSize, OrderBy: 'ArrivalDate', Ascending: 1, AscendingGroup: -1,
         take: pageSize, skip: (page - 1) * pageSize, page,

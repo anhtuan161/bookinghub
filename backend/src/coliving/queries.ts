@@ -17,6 +17,8 @@ const ARR = `coalesce(b.stay_from, b.arrival_date)`
 const DEP = `greatest(b.departure_date, coalesce(b.stay_from, ${ARR}) + 1)`
 // Dưới mức này/đêm coi là chưa nhập giá hoặc nhập sai (vd 0đ, 1đ)
 const MIN_NIGHT = 50000
+// Cảnh báo chỉ trong phạm vi đồng bộ (booking cũ hơn không còn cập nhật)
+const WINDOW = Math.max(1, config.ezcloudWindowDays)
 
 const BOOKING_COLS = `b.reservation_room_id as id, b.reservation_number as number, b.reservation_code as code, b.status,
   ${ARR} as arrival_date, b.arrival_date as pms_arrival_date, b.departure_date, ${DEP} as dep_eff, b.nights, b.room_id,
@@ -175,10 +177,10 @@ export async function buildAlerts(D: string): Promise<Alert[]> {
     await q(`${base} and b.status = 'BOOKED' and ${ARR} < $1::date and ${DEP} > $1::date order by ${ARR}`, [D]))
 
   add('warning', 'overdue_checkout', 'Quá ngày đi chưa check-out', 'Check-out hoặc gia hạn trên ezCloud',
-    await q(`${base} and b.status = 'CHECKIN' and b.departure_date < $1::date order by b.departure_date`, [D]))
+    await q(`${base} and b.status = 'CHECKIN' and b.departure_date < $1::date and b.departure_date >= $1::date - ${WINDOW} order by b.departure_date`, [D]))
 
-  add('info', 'stale_booked', 'Booking đã qua ngày đi vẫn BOOKED (60 ngày gần đây)', 'Có thể là no-show chưa xử lý hoặc quên check-in/out',
-    await q(`${base} and b.status = 'BOOKED' and ${DEP} <= $1::date and b.departure_date >= $1::date - 60 order by b.departure_date desc`, [D]))
+  add('info', 'stale_booked', `Booking đã qua ngày đi vẫn BOOKED (${WINDOW} ngày gần đây)`, 'Có thể là no-show chưa xử lý hoặc quên check-in/out',
+    await q(`${base} and b.status = 'BOOKED' and ${DEP} <= $1::date and b.departure_date >= $1::date - ${WINDOW} order by b.departure_date desc`, [D]))
 
   add('warning', 'missing_price', 'Booking chưa có giá / giá bất thường (< 50.000đ/đêm)', 'Sửa giá phòng trên ezCloud để báo cáo doanh thu đúng',
     await q(
@@ -213,6 +215,7 @@ export async function syncState() {
     stale: minutesSinceOk === null || minutesSinceOk > config.ezcloudSyncMinutes * 3,
     pendingRequests: pending?.n ?? 0,
     intervalMinutes: config.ezcloudSyncMinutes,
+    windowDays: config.ezcloudWindowDays,
   }
 }
 
