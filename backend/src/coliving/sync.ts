@@ -66,6 +66,10 @@ const WATCH: (keyof Mapped)[] = [
   'source_name', 'ota_ref', 'room_price_name', 'adults', 'children', 'cancelled_at',
 ]
 
+// Không lưu giấy tờ tuỳ thân / ngày sinh / địa chỉ khách (không cần cho báo cáo).
+const DROP = ['IdentityNumber', 'PassportNumber', 'Birthday', 'Address', 'Ward', 'District', 'Province']
+const slim = (r: any) => Object.fromEntries(Object.entries(r).filter(([k]) => !DROP.includes(k)))
+
 function mapRow(r: any): Mapped {
   const m: any = {
     reservation_room_id: Number(r.ReservationRoomId),
@@ -100,7 +104,7 @@ function mapRow(r: any): Mapped {
     created_at_pms: ts(r.CreatedDate),
     cancelled_at: ts(r.CancelDate),
     cancel_reason: str(r.CancelReason),
-    raw: r,
+    raw: slim(r),
   }
   // hash trên toàn bộ dòng gốc → mọi thay đổi đều được cập nhật; sự kiện chỉ sinh từ các trường WATCH.
   m.hash = crypto.createHash('sha1').update(JSON.stringify(r)).digest('hex')

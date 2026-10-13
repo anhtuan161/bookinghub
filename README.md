@@ -1,5 +1,10 @@
 # Booking Hub — Quản trị & bán phòng villa cho agency
 
+> **Bản homelab (Thomstay Hub, nhánh `feat/coliving-auth`)**: thêm đăng nhập email + phân quyền theo menu,
+> menu **Thomstay Coliving** (đồng bộ ezCloud PMS), chạy trên docker-core `http://100.86.217.48:8097`.
+> AI/người tiếp theo đọc **`docs/HOMELAB-HANDOFF.md`** trước; API ezCloud: `docs/EZCLOUD-API.md`.
+
+
 Hệ thống tập trung hóa dữ liệu booking villa từ nhiều Google Sheet chủ nhà (mỗi nhà
 một định dạng, trạng thái mã hóa bằng **màu nền**), chuẩn hóa về một nguồn sự thật,
 phục vụ nhân viên tra phòng nhanh và (giai đoạn sau) chatbot tư vấn khách.
