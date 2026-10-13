@@ -87,7 +87,7 @@ export default function Revenue() {
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               {data.missingPrice.length > 0 && (
                 <div>
-                  ⚠️ <b>{data.missingPrice.length} booking</b> trong năm chưa có giá phòng trên ezCloud → doanh thu đang thiếu. Sửa giá trên ezCloud, hệ thống tự cập nhật.
+                  ⚠️ <b>{data.missingPrice.length} booking</b> trong năm chưa có giá hoặc giá bất thường (< 50.000đ/đêm) trên ezCloud → doanh thu đang thiếu. Sửa giá trên ezCloud, hệ thống tự cập nhật.
                 </div>
               )}
               {data.chargesNotSynced > 0 && <div>⏳ {data.chargesNotSynced} booking chưa lấy xong tiền phòng theo đêm (đang đồng bộ dần).</div>}
@@ -197,7 +197,7 @@ export default function Revenue() {
 
           {data.missingPrice.length > 0 && (
             <section className="card overflow-hidden">
-              <h2 className="border-b border-slate-100 px-4 py-3 font-semibold text-slate-800">Booking chưa có giá ({data.missingPrice.length})</h2>
+              <h2 className="border-b border-slate-100 px-4 py-3 font-semibold text-slate-800">Booking chưa có giá / giá bất thường ({data.missingPrice.length})</h2>
               <ul className="divide-y divide-slate-100 text-sm">
                 {data.missingPrice.map((b) => (
                   <li key={b.id}>

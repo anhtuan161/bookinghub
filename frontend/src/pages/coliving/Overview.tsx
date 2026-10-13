@@ -58,7 +58,16 @@ export default function Overview() {
             <Stat
               label="Công suất đêm nay"
               value={pct(data.occupancy)}
-              sub={`${data.occupiedRooms}/${data.rooms} phòng${data.unassignedTonight ? ` · ${data.unassignedTonight} chưa gán` : ''}`}
+              sub={
+                <>
+                  {data.occupiedRooms}/{data.rooms} phòng{data.unassignedTonight ? ` · ${data.unassignedTonight} chưa gán` : ''}
+                  {isToday && data.ezKpi?.todayStats_roomOccupied != null && data.ezKpi.todayStats_roomOccupied !== data.occupiedRooms && (
+                    <span className="block text-amber-600" title="ezCloud tính cả phòng có booking đã qua ngày đi nhưng chưa check-in/check-out (xem cảnh báo bên dưới)">
+                      ezCloud ghi {data.ezKpi.todayStats_roomOccupied} phòng — do booking chưa xử lý
+                    </span>
+                  )}
+                </>
+              }
               tone={data.occupancy >= 0.8 ? 'good' : 'default'}
             />
             <Stat label="Khách đến" value={data.arrivals.length} sub={`Ngày mai: ${data.arrivalsTomorrow.length}`} />

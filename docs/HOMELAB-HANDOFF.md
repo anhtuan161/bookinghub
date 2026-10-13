@@ -81,6 +81,7 @@ Che do: co `APP_DATABASE_URL` -> dang nhap that + Coliving. Khong co -> che do c
   4. Neu ezCloud tra 0 booking -> dung (tranh danh dau xoa nham).
 - Quy uoc bao cao (`queries.ts`): booking hieu luc = khong CANCELLED/NOSHOW va con tren ezCloud; dem o = arrival_date .. truoc departure_date (day-use = 1 dem); BOOKED da qua ngay den van tinh la dang o (le tan hay quen check-in) + canh bao. Doanh thu = tong tien phong theo dem tu ezCloud (accrual theo dem o). ADR = doanh thu/dem ban; RevPAR = doanh thu/(so phong x ngay). Phan khuc: ngan (<7 dem), trung (7-27), dai han (>=28 = coliving).
 - Canh bao Tong quan: trung phong (2 booking chong ngay cung phong), chua gan phong, qua ngay den chua check-in, qua ngay di chua check-out, BOOKED da qua ngay di (60 ngay), chua co gia phong, dong bo tre (> 3 chu ky).
+- Doi chieu luot dau voi ezCloud THAT (2026-10-13): 604 booking, 11 phong, tien dem 427/427. Cong suat dem nay he thong = 7/11 (theo ngay o), ezCloud Dashboard = 11/11 vi ezCloud tinh ca phong co booking BOOKED da qua ngay di chua check-in/out (101F, P203, P204, P304). Giu cach tinh theo ngay; trang Tong quan hien them so cua ezCloud + canh bao `stale_booked`. Canh bao gia: < 50.000d/dem (`MIN_NIGHT` trong queries.ts) = chua co gia/gia sai (vd FAMILY 1d/dem).
 - Du lieu goc (2026-10-13): 11 phong, 604 booking (2025-07 -> 2026-07+), nhieu booking dai han gia 0 -> user se sua gia tren ezCloud (doanh thu that do user nhap sai truoc do).
 - Telegram (tuy chon): ghi bot token vao `/data/.secrets/bookinghub/telegram_bot_token`, chat id vao `telegram_chat_id` (user tu nhap), restart worker. Gui: thay doi booking (24h gan nhat, gom 1 tin/luot) + tom tat 7h sang (`DAILY_SUMMARY_HOUR`). Tin co ten khach -> chi dung chat/nhom noi bo.
 
@@ -111,11 +112,12 @@ Backup: DB `bookinghub` nam trong `pg_dumpall` hang dem (`pg-backup.timer`, ma h
 
 - E2E auth/quyen tren 127.0.0.1:8097 (tai khoan `*@thomstay.test`, da xoa): 36 muc dung + 1 ky vong viet sai (`/api/nope` khi chua dang nhap tra 401 thay vi 404 - hanh vi dung) (anon 401, pending 403, admin, cap quyen tung menu, 403 dung cho menu khong duoc cap, tu nang quyen 403, doi/dat lai mat khau, link dung 1 lan, khoa tai khoan, admin cuoi, deep link SPA).
 - Dong bo voi ezCloud GIA (DB test rieng, da xoa): 21/21 (refresh token, baseline, khong doi, moi/doi/huy/xoa, lay lai tien phong khi doi ngay, canh bao trung phong/qua ngay den/thieu gia, doanh thu nam/ngay, lich, tim kiem, phien hong).
-- CHUA kiem voi ezCloud THAT: cho user dan phien (buoc 7).
+- Da ket noi ezCloud THAT 2026-10-13 11:09 (user dan phien bot, admin `tuanlai161@gmail.com` da tao). Luot dau 179s/404 call, luot 2 lay not 27 tien dem.
 
 ## 7. Viec tiep theo
 
-- [ ] USER: dang ky tai khoan admin tai `/register` (email trong BOOTSTRAP_ADMIN_EMAILS) -> `/coliving/sync` dan phien bot ezCloud. AI: xem log worker luot dau, doi chieu so lieu voi ezCloud (so booking, cong suat hom nay, doanh thu 1 thang).
+- [x] USER tao admin + dan phien ezCloud; AI doi chieu luot dau (2026-10-13).
+- [ ] USER: xu ly booking cu chua check-in/out tren ezCloud (canh bao tren Tong quan) va xoa du lieu site ezCloud tren Chrome ca nhan (Application > Clear site data, KHONG bam Dang xuat) de khong 2 noi cung refresh token.
 - [ ] USER: sua gia cac booking dai han gia 0 tren ezCloud (trang Doanh thu liet ke).
 - [ ] USER (tuy chon): token + chat id Telegram.
 - [ ] AI: public qua Cloudflare (`hub.thomstay.com`?) chi sau khi co admin: route tunnel -> `bookinghub:8787`, dat `PUBLIC_URL=https://...`, `COOKIE_SECURE=true`, `TRUST_PROXY=true` trong `.env` stack; can user dong y + them route.

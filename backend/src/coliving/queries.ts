@@ -13,6 +13,8 @@ import { todayLocal } from './sync.js'
 
 export const ACTIVE = `b.missing_since is null and coalesce(b.status,'') not in ('CANCELLED','NOSHOW')`
 const DEP = `greatest(b.departure_date, b.arrival_date + 1)`
+// Dưới mức này/đêm coi là chưa nhập giá hoặc nhập sai (vd 0đ, 1đ)
+const MIN_NIGHT = 50000
 
 const BOOKING_COLS = `b.reservation_room_id as id, b.reservation_number as number, b.reservation_code as code, b.status,
   b.arrival_date, b.departure_date, ${DEP} as dep_eff, b.nights, b.room_id,
@@ -170,10 +172,10 @@ export async function buildAlerts(D: string): Promise<Alert[]> {
   add('info', 'stale_booked', 'Booking đã qua ngày đi vẫn BOOKED (60 ngày gần đây)', 'Có thể là no-show chưa xử lý hoặc quên check-in/out',
     await q(`${base} and b.status = 'BOOKED' and ${DEP} <= $1::date and b.departure_date >= $1::date - 60 order by b.departure_date desc`, [D]))
 
-  add('warning', 'missing_price', 'Booking chưa có giá phòng', 'Nhập giá phòng trên ezCloud để báo cáo doanh thu đúng',
+  add('warning', 'missing_price', 'Booking chưa có giá / giá bất thường (< 50.000đ/đêm)', 'Sửa giá phòng trên ezCloud để báo cáo doanh thu đúng',
     await q(
       `${base} and ${DEP} > $1::date - 31 and b.arrival_date <= $1::date + 60
-         and (coalesce(b.room_total, 0) = 0 and coalesce(b.price, 0) = 0 or b.room_total = 0)
+         and coalesce(b.room_total, b.price * greatest(b.nights, 1), 0) < ${MIN_NIGHT} * greatest(b.nights, 1)
        order by b.arrival_date`,
       [D],
     ))
@@ -366,7 +368,7 @@ export async function revenueYear(yearIn?: number) {
   const missingPrice = await q<any>(
     `select ${BOOKING_COLS} from cl_bookings b left join cl_rooms r on r.room_id = b.room_id
       where ${ACTIVE} and b.arrival_date < $2::date and ${DEP} > $1::date
-        and (coalesce(b.room_total, 0) = 0 and coalesce(b.price, 0) = 0 or b.room_total = 0)
+        and coalesce(b.room_total, b.price * greatest(b.nights, 1), 0) < ${MIN_NIGHT} * greatest(b.nights, 1)
       order by b.arrival_date`,
     [start, end],
   )
