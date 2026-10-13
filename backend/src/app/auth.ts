@@ -44,9 +44,9 @@ function parseCookies(header: string | undefined): Record<string, string> {
   return out
 }
 
-function setCookie(res: Response, value: string, maxAgeSec: number) {
+function setCookie(req: Request, res: Response, value: string, maxAgeSec: number) {
   const attrs = [`${COOKIE}=${encodeURIComponent(value)}`, 'Path=/', 'HttpOnly', 'SameSite=Lax', `Max-Age=${maxAgeSec}`]
-  if (config.cookieSecure) attrs.push('Secure')
+  if (config.cookieSecure === 'true' || (config.cookieSecure === 'auto' && req.secure)) attrs.push('Secure')
   res.append('Set-Cookie', attrs.join('; '))
 }
 
@@ -59,12 +59,12 @@ export async function createSession(req: Request, res: Response, userId: number)
     [sha256(token), userId, String(days), clientIp(req), String(req.headers['user-agent'] ?? '').slice(0, 300)],
   )
   await q('update app_users set last_login_at = now() where id = $1', [userId])
-  setCookie(res, token, days * 86400)
+  setCookie(req, res, token, days * 86400)
 }
 
 export async function destroySession(req: Request, res: Response) {
   if (req.sessionHash) await q('delete from app_sessions where id_hash = $1', [req.sessionHash])
-  setCookie(res, '', 0)
+  setCookie(req, res, '', 0)
 }
 
 export async function loadUserById(id: number): Promise<AuthUser | null> {

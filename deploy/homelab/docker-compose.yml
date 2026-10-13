@@ -14,9 +14,9 @@ x-app: &app
     TELEGRAM_BOT_TOKEN_FILE: /run/bh/telegram_bot_token
     TELEGRAM_CHAT_ID_FILE: /run/bh/telegram_chat_id
     BOOTSTRAP_ADMIN_EMAILS: "${BOOTSTRAP_ADMIN_EMAILS:-}"
-    PUBLIC_URL: "${PUBLIC_URL:-http://100.86.217.48:8097}"
-    COOKIE_SECURE: "${COOKIE_SECURE:-false}"
-    TRUST_PROXY: "${TRUST_PROXY:-false}"
+    PUBLIC_URL: "${PUBLIC_URL:-https://hub.thomstay.com}"   # link dat lai mat khau
+    COOKIE_SECURE: "${COOKIE_SECURE:-auto}"              # Secure khi vao qua HTTPS (Cloudflare), van dung duoc HTTP noi bo
+    TRUST_PROXY: "${TRUST_PROXY:-uniquelocal}"           # tin X-Forwarded-* tu cloudflared (mang Docker proxy)
     EZCLOUD_SYNC_MINUTES: "${EZCLOUD_SYNC_MINUTES:-15}"
     EZCLOUD_WINDOW_DAYS: "${EZCLOUD_WINDOW_DAYS:-30}"   # chi dong bo booking co ngay di >= hom nay - N ngay
     EZCLOUD_CHARGES_PER_RUN: "${EZCLOUD_CHARGES_PER_RUN:-60}"   # so booking lay chi tiet moi luot (giam tai ezCloud)

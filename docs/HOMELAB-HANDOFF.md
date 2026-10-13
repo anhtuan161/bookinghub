@@ -12,7 +12,7 @@ Doc file nay TRUOC khi sua code/deploy. Doc them: `docs/EZCLOUD-API.md` (API noi
 | May | docker-core (VM 100), stack `/data/compose/bookinghub/` |
 | Container | `bookinghub` (web + API, cong 8097->8787), `bookinghub-worker` (dong bo ezCloud) - cung image `bookinghub:<ts>-<sha>` |
 | Kho code goc | docker-core `/data/src/bookinghub.git` (bare). Hook `post-receive` mirror sang Gitea `thomstay/bookinghub` (private, `http://100.86.217.48:3030/thomstay/bookinghub`) |
-| Upstream | GitHub `anhtuan161/bookinghub` (remote `github` trong kho bare). CHUA push nhanh moi len GitHub (can user dong y). |
+| Upstream | GitHub `anhtuan161/bookinghub`. Nhanh `feat/coliving-auth` DA push len GitHub 2026-10-13 (chua merge master). KHONG merge master khi chua chot: Vercel/Render deploy tu master, ban moi can App DB docker-core -> dang nhap Vercel se hong. Push GitHub tu laptop: `git push https://github.com/anhtuan161/bookinghub.git <nhanh>` (Git Credential Manager cua user). |
 | Ban lam viec | Workspace `B:\6.workspace\VPS\Projects\bookinghub\` (git clone, remote `origin` = docker-core bare) |
 | Ban cu | `Projects/n8n/villaos/` = clone GitHub cu, giu cho tai lieu n8n (villaos-sync). KHONG sua code o do nua. |
 | DB villa | Supabase (giong ban Vercel/Render) - n8n `villaos-sync` ghi vao, app doc |

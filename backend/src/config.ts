@@ -33,14 +33,16 @@ export const config = {
   appDatabaseUrl: secret('APP_DATABASE_URL'),
   // Khoá 32 byte (hex/base64/chuỗi bất kỳ) để mã hoá secret lưu trong DB (phiên ezCloud).
   appSecretKey: secret('APP_SECRET_KEY'),
-  // Cookie phiên đăng nhập chỉ gửi qua HTTPS (bật khi public qua Cloudflare).
-  cookieSecure: (process.env.COOKIE_SECURE ?? 'false').toLowerCase() === 'true',
+  // Cookie phiên: 'auto' (mặc định) = Secure khi request đến qua HTTPS (Cloudflare), vẫn dùng được HTTP nội bộ;
+  // 'true' = luôn Secure; 'false' = không bao giờ.
+  cookieSecure: (process.env.COOKIE_SECURE ?? 'auto').toLowerCase(),
   sessionDays: Number(process.env.SESSION_DAYS ?? 30),
   // Email được tự cấp quyền admin khi đăng ký, CHỈ khi hệ thống chưa có admin nào.
   bootstrapAdminEmails: list(process.env.BOOTSTRAP_ADMIN_EMAILS),
   // Origin được phép gọi API kèm cookie (dev Vite). Cùng origin thì không cần.
   corsOrigins: list(process.env.CORS_ORIGINS),
-  trustProxy: (process.env.TRUST_PROXY ?? 'false').toLowerCase() === 'true',
+  // Tin header X-Forwarded-* từ proxy: 'false' | 'true' | danh sách kiểu Express ('uniquelocal' = mạng Docker/LAN, vd cloudflared)
+  trustProxy: (process.env.TRUST_PROXY ?? 'false').toLowerCase(),
   // Thư mục frontend đã build (Docker: /app/public) → backend phục vụ luôn web.
   staticDir: process.env.STATIC_DIR ?? '',
   publicUrl: (process.env.PUBLIC_URL ?? '').replace(/\/+$/, ''),

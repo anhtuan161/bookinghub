@@ -15,7 +15,23 @@ import { syncTick } from './services/sync.js'
 
 const app = express()
 app.disable('x-powered-by')
-if (config.trustProxy) app.set('trust proxy', true)
+if (config.trustProxy === 'true') app.set('trust proxy', true)
+else if (config.trustProxy && config.trustProxy !== 'false') app.set('trust proxy', config.trustProxy)
+
+// Header bảo mật (web public qua Cloudflare). CSP cho phép Google Fonts (index.html).
+app.use((req, res, next) => {
+  res.set('X-Content-Type-Options', 'nosniff')
+  res.set('X-Frame-Options', 'DENY')
+  res.set('Referrer-Policy', 'same-origin')
+  res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  res.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+  )
+  if (req.secure) res.set('Strict-Transport-Security', 'max-age=15552000')
+  next()
+})
 
 // Cùng origin (backend phục vụ luôn web) → không cần CORS. Chỉ mở cho origin dev khai báo.
 if (config.corsOrigins.length) app.use(cors({ origin: config.corsOrigins, credentials: true }))
