@@ -114,7 +114,8 @@ async function rawCall(session: EzSession, path: string, init?: { method?: strin
       Language: 'en',
       Accept: 'application/json',
     },
-    body: init?.body === undefined ? undefined : JSON.stringify(init.body),
+    // body chuỗi gửi nguyên văn (Checkin gửi "" giống web ezCloud), còn lại JSON
+    body: init?.body === undefined ? undefined : typeof init.body === 'string' ? init.body : JSON.stringify(init.body),
     signal: AbortSignal.timeout(60_000),
   })
   return res
@@ -227,6 +228,36 @@ export class EzClient {
 
   roomCharges(reservationRoomId: number) {
     return this.call<any>(`api/Reservation/GetRoomChargesList?reservationRoomId=${reservationRoomId}`)
+  }
+
+  // Chi tiết nhẹ: trạng thái, ngày, giá; RoomExtraServicesList/PaymentsList chỉ có số tiền (không mô tả/ngày).
+  reservationRoomV3(reservationRoomId: number) {
+    return this.call<any>(`api/Reservation/GetReservationRoomV3?reservationRoomId=${reservationRoomId}`)
+  }
+
+  // Chi tiết đầy đủ (~20-100 KB): BookingServiceList (tên dịch vụ), PaymentList (ngày thu). Web ezCloud gọi khi mở booking.
+  processReservation(reservationRoomId: number, isoDate: string) {
+    return this.call<any>(`api/Reservation/ProcessReservation?date=${isoDate}&reservationRoomId=${reservationRoomId}`)
+  }
+
+  hotelSettings() {
+    return this.call<any>('api/Hotel/Settings')
+  }
+
+  // ===================== GHI (chỉ gọi từ coliving/writes.ts, có kiểm tra quyền + nhật ký) =====================
+  // Sửa giá từng đêm của 1 booking (giống hộp "Sửa giá" trên web ezCloud). Không đổi giá bán trên OTA.
+  updatePriceAdjustment(body: unknown) {
+    return this.call<any>('api/Booking/UpdatePriceAdjustment', { method: 'POST', body })
+  }
+
+  // Nhận phòng. Trả {success:false, message:"Xung đột với booking khác!", data:{booking chặn}} nếu phòng đang bị chiếm.
+  checkin(reservationRoomId: number) {
+    return this.call<any>(`api/Booking/Checkin?reservationRoomId=${reservationRoomId}`, { method: 'POST', body: '' })
+  }
+
+  // Thêm dịch vụ (web ezCloud dùng để gom các đêm đã qua khi check-in muộn).
+  addExtraService(items: unknown[]) {
+    return this.call<any>('api/Booking/AddExtraService', { method: 'POST', body: items })
   }
 
   roomView(isoDate: string) {

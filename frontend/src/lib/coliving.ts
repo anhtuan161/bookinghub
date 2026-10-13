@@ -17,6 +17,9 @@ export interface ClBooking {
   ota_ref: string | null
   price: number | null
   room_total: number | null
+  services_total?: number | null
+  paid_total?: number | null
+  pms_arrival_date?: string
   guest: string | null
   adults: number | null
   children: number | null
@@ -66,6 +69,7 @@ export interface SyncRun {
 }
 
 export interface SyncState {
+  writesEnabled?: boolean
   ezcloud: EzStatus
   lastRun: SyncRun | null
   lastOkAt: string | null
@@ -94,7 +98,7 @@ export interface Overview {
   departures: ClBooking[]
   arrivalsTomorrow: ClBooking[]
   forecast: { day: string; occupied: number; unassigned: number; arrivals: number; revenue: number; occupancy: number }[]
-  mtd: { from: string; to: string; soldNights: number; availableNights: number; occupancy: number; revenue: number; adr: number; revpar: number }
+  mtd: { from: string; to: string; soldNights: number; availableNights: number; occupancy: number; revenue: number; adr: number; revpar: number; collected: number }
   alerts: Alert[]
   events: ClEvent[]
   sync: SyncState
@@ -111,13 +115,16 @@ export interface RevenueMonth {
   revpar: number
   bySegment: Record<string, number>
   bySource: Record<string, number>
+  collected: number
+  payments: number
+  otherServices: number
 }
 
 export interface Revenue {
   year: number
   rooms: number
   monthly: RevenueMonth[]
-  total: { nights: number; revenue: number; available: number; occupancy: number; adr: number; revpar: number }
+  total: { nights: number; revenue: number; available: number; occupancy: number; adr: number; revpar: number; collected: number; otherServices: number }
   bySource: { key: string; nights: number; revenue: number }[]
   bySegment: { key: string; nights: number; revenue: number }[]
   byRoom: { key: string; nights: number; revenue: number }[]
@@ -142,6 +149,35 @@ export const getRevenueDaily = (month: string) =>
     `/coliving/revenue/daily?month=${month}`,
   )
 export const getSyncRuns = () => api<SyncRun[]>('/coliving/sync-runs')
+
+// ----- GHI lên ezCloud -----
+export interface PricePreview {
+  nights: number
+  changed: number
+  from: string
+  to: string
+  oldTotal: number
+  newTotal: number
+  perNight: number[]
+}
+export interface CheckinPreview {
+  status: string
+  roomAssigned: boolean
+  arrival: string
+  pastNights: number
+  pastAmount: number
+  pastFrom: string | null
+  pastTo: string | null
+  noshowOff: boolean
+  allZero: boolean
+  writesEnabled: boolean
+}
+export const setPrice = (id: number, body: { mode: 'night' | 'month'; amount: number; fromNight?: string; dryRun?: boolean }) =>
+  api<{ ok?: boolean; dryRun?: boolean; preview: PricePreview; message?: string }>(`/coliving/bookings/${id}/price`, { method: 'POST', json: body })
+export const getCheckinPreview = (id: number) => api<CheckinPreview>(`/coliving/bookings/${id}/checkin-preview`)
+export const doCheckin = (id: number) =>
+  api<{ ok: boolean; status: string; arrival: string; extra: any }>(`/coliving/bookings/${id}/checkin`, { method: 'POST', json: {} })
+export const getWrites = () => api<any[]>('/coliving/writes')
 export const requestSync = () => api<{ queued: boolean; message: string }>('/coliving/sync', { method: 'POST', json: {} })
 export const connectEzcloud = (session: string) => api<{ ok: boolean; status: EzStatus }>('/coliving/connect', { method: 'POST', json: { session } })
 export const disconnectEzcloud = () => api('/coliving/connect', { method: 'DELETE' })

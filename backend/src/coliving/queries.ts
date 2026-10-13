@@ -12,13 +12,15 @@ import { loadSession } from './ezcloud.js'
 import { todayLocal } from './sync.js'
 
 export const ACTIVE = `b.missing_since is null and coalesce(b.status,'') not in ('CANCELLED','NOSHOW')`
-const DEP = `greatest(b.departure_date, b.arrival_date + 1)`
+// Ngày bắt đầu ở thật: check-in muộn làm ezCloud dời ngày đến → stay_from giữ ngày cũ (từ dịch vụ "Phòng cả ngày")
+const ARR = `coalesce(b.stay_from, b.arrival_date)`
+const DEP = `greatest(b.departure_date, coalesce(b.stay_from, ${ARR}) + 1)`
 // Dưới mức này/đêm coi là chưa nhập giá hoặc nhập sai (vd 0đ, 1đ)
 const MIN_NIGHT = 50000
 
 const BOOKING_COLS = `b.reservation_room_id as id, b.reservation_number as number, b.reservation_code as code, b.status,
-  b.arrival_date, b.departure_date, ${DEP} as dep_eff, b.nights, b.room_id,
-  coalesce(r.name, b.room_name) as room, b.room_type, b.source_name as source, b.ota_ref, b.price, b.room_total,
+  ${ARR} as arrival_date, b.arrival_date as pms_arrival_date, b.departure_date, ${DEP} as dep_eff, b.nights, b.room_id,
+  coalesce(r.name, b.room_name) as room, b.room_type, b.source_name as source, b.ota_ref, b.price, b.room_total, b.services_total, b.paid_total,
   b.guest_name as guest, b.adults, b.children, b.room_price_name as rate_plan, b.created_at_pms as created_at, b.created_by`
 
 const isoDate = (s: unknown, fallback: string) => (typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : fallback)
@@ -47,22 +49,22 @@ export async function overview(dayIn?: string) {
 
   const inHouse = await q<any>(
     `select ${BOOKING_COLS} from cl_bookings b left join cl_rooms r on r.room_id = b.room_id
-      where ${ACTIVE} and b.arrival_date <= $1::date and ${DEP} > $1::date order by room nulls last`,
+      where ${ACTIVE} and ${ARR} <= $1::date and ${DEP} > $1::date order by room nulls last`,
     [D],
   )
   const arrivals = await q<any>(
     `select ${BOOKING_COLS} from cl_bookings b left join cl_rooms r on r.room_id = b.room_id
-      where ${ACTIVE} and b.arrival_date = $1::date order by b.arrival_at`,
+      where ${ACTIVE} and ${ARR} = $1::date order by b.arrival_at`,
     [D],
   )
   const departures = await q<any>(
     `select ${BOOKING_COLS} from cl_bookings b left join cl_rooms r on r.room_id = b.room_id
-      where ${ACTIVE} and b.departure_date = $1::date and b.arrival_date < $1::date order by b.departure_at`,
+      where ${ACTIVE} and b.departure_date = $1::date and ${ARR} < $1::date order by b.departure_at`,
     [D],
   )
   const arrivalsTomorrow = await q<any>(
     `select ${BOOKING_COLS} from cl_bookings b left join cl_rooms r on r.room_id = b.room_id
-      where ${ACTIVE} and b.arrival_date = $1::date + 1 order by b.arrival_at`,
+      where ${ACTIVE} and ${ARR} = $1::date + 1 order by b.arrival_at`,
     [D],
   )
 
@@ -74,10 +76,10 @@ export async function overview(dayIn?: string) {
     `select d::date::text as day,
             count(distinct b.room_id) filter (where b.room_id is not null)::int as occupied,
             count(*) filter (where b.room_id is null)::int as unassigned,
-            count(*) filter (where b.arrival_date = d::date)::int as arrivals,
+            count(*) filter (where ${ARR} = d::date)::int as arrivals,
             coalesce(sum(n.amount),0)::float as revenue
        from generate_series($1::date, $1::date + 13, interval '1 day') d
-       left join cl_bookings b on ${ACTIVE} and b.arrival_date <= d::date and ${DEP} > d::date
+       left join cl_bookings b on ${ACTIVE} and ${ARR} <= d::date and ${DEP} > d::date
        left join cl_booking_nights n on n.reservation_room_id = b.reservation_room_id and n.night = d::date
       group by d order by d`,
     [D],
@@ -88,11 +90,16 @@ export async function overview(dayIn?: string) {
   const mtd = await q1<any>(
     `with nights as (
        select b.reservation_room_id, d::date night
-         from cl_bookings b, generate_series(b.arrival_date, ${DEP} - 1, interval '1 day') d
-        where ${ACTIVE} and b.arrival_date <= $2::date and ${DEP} > $1::date)
+         from cl_bookings b, generate_series(${ARR}, ${DEP} - 1, interval '1 day') d
+        where ${ACTIVE} and ${ARR} <= $2::date and ${DEP} > $1::date)
      select (select count(*) from nights where night between $1::date and $2::date)::int as sold,
             (select coalesce(sum(n.amount),0) from cl_booking_nights n join cl_bookings b on b.reservation_room_id = n.reservation_room_id
               where ${ACTIVE} and n.night between $1::date and $2::date)::float as revenue`,
+    [monthStart, D],
+  )
+  const collected = await q1<any>(
+    `select coalesce(sum(p.amount),0)::float as amount from cl_booking_payments p join cl_bookings b on b.reservation_room_id = p.reservation_room_id
+      where not p.deleted and b.missing_since is null and (p.paid_at at time zone '${config.timezone}')::date between $1::date and $2::date`,
     [monthStart, D],
   )
   const daysElapsed = Number(D.slice(8, 10))
@@ -123,6 +130,7 @@ export async function overview(dayIn?: string) {
       revenue: mtd?.revenue ?? 0,
       adr: mtd?.sold ? (mtd.revenue ?? 0) / mtd.sold : 0,
       revpar: mtdAvail ? (mtd?.revenue ?? 0) / mtdAvail : 0,
+      collected: collected?.amount ?? 0,
     },
     alerts,
     events,
@@ -149,7 +157,7 @@ export async function buildAlerts(D: string): Promise<Alert[]> {
   // Trùng phòng (2 booking cùng phòng chồng ngày) — nguy cơ overbooking
   const overlaps = await q<any>(
     `with x as (select b.reservation_room_id id, b.reservation_number number, b.room_id, coalesce(r.name,b.room_name) room,
-                       b.arrival_date, ${DEP} dep, b.guest_name guest, b.source_name source
+                       ${ARR} as arrival_date, ${DEP} dep, b.guest_name guest, b.source_name source
                   from cl_bookings b left join cl_rooms r on r.room_id = b.room_id
                  where ${ACTIVE} and b.room_id is not null and ${DEP} > $1::date)
      select a.room, a.id as id_a, c.id as id_b, a.number as number_a, a.guest as guest_a, a.arrival_date as from_a, a.dep as to_a,
@@ -161,10 +169,10 @@ export async function buildAlerts(D: string): Promise<Alert[]> {
   add('danger', 'overlap', 'Trùng phòng (2 booking chồng ngày)', 'Kiểm tra lại trên ezCloud, đổi phòng hoặc huỷ 1 booking', overlaps)
 
   add('warning', 'unassigned', 'Booking chưa gán phòng', 'Gán phòng trên ezCloud để tránh overbooking',
-    await q(`${base} and b.room_id is null and ${DEP} > $1::date order by b.arrival_date`, [D]))
+    await q(`${base} and b.room_id is null and ${DEP} > $1::date order by ${ARR}`, [D]))
 
   add('warning', 'overdue_checkin', 'Đã qua ngày đến nhưng chưa check-in', 'Khách đang ở? Bấm check-in trên ezCloud cho đúng trạng thái',
-    await q(`${base} and b.status = 'BOOKED' and b.arrival_date < $1::date and ${DEP} > $1::date order by b.arrival_date`, [D]))
+    await q(`${base} and b.status = 'BOOKED' and ${ARR} < $1::date and ${DEP} > $1::date order by ${ARR}`, [D]))
 
   add('warning', 'overdue_checkout', 'Quá ngày đi chưa check-out', 'Check-out hoặc gia hạn trên ezCloud',
     await q(`${base} and b.status = 'CHECKIN' and b.departure_date < $1::date order by b.departure_date`, [D]))
@@ -174,9 +182,9 @@ export async function buildAlerts(D: string): Promise<Alert[]> {
 
   add('warning', 'missing_price', 'Booking chưa có giá / giá bất thường (< 50.000đ/đêm)', 'Sửa giá phòng trên ezCloud để báo cáo doanh thu đúng',
     await q(
-      `${base} and ${DEP} > $1::date - 31 and b.arrival_date <= $1::date + 60
+      `${base} and ${DEP} > $1::date - 31 and ${ARR} <= $1::date + 60
          and coalesce(b.room_total, b.price * greatest(b.nights, 1), 0) < ${MIN_NIGHT} * greatest(b.nights, 1)
-       order by b.arrival_date`,
+       order by ${ARR}`,
       [D],
     ))
 
@@ -217,7 +225,7 @@ export async function calendar(fromIn?: string, daysIn?: number) {
   )
   const bookings = await q<any>(
     `select ${BOOKING_COLS} from cl_bookings b left join cl_rooms r on r.room_id = b.room_id
-      where ${ACTIVE} and b.arrival_date < $1::date + $2::int and ${DEP} > $1::date order by b.arrival_date`,
+      where ${ACTIVE} and ${ARR} < $1::date + $2::int and ${DEP} > $1::date order by ${ARR}`,
     [from, days],
   )
   const nights = await q<any>(
@@ -241,10 +249,10 @@ export async function listBookings(f: Record<string, any>) {
   const to = isoDate(f.to, '')
   const field = f.field === 'arrival' ? 'arrival' : f.field === 'created' ? 'created' : 'stay'
   if (from && to) {
-    if (field === 'arrival') where.push(`b.arrival_date between ${p(from)}::date and ${p(to)}::date`)
+    if (field === 'arrival') where.push(`${ARR} between ${p(from)}::date and ${p(to)}::date`)
     else if (field === 'created')
       where.push(`(b.created_at_pms at time zone '${config.timezone}')::date between ${p(from)}::date and ${p(to)}::date`)
-    else where.push(`b.arrival_date <= ${p(to)}::date and ${DEP} > ${p(from)}::date`)
+    else where.push(`${ARR} <= ${p(to)}::date and ${DEP} > ${p(from)}::date`)
   }
   const statuses = String(f.status ?? '')
     .split(',')
@@ -268,7 +276,7 @@ export async function listBookings(f: Record<string, any>) {
             b.market_name as market, b.cancelled_at, b.cancel_reason, b.booking_note as note
        from cl_bookings b left join cl_rooms r on r.room_id = b.room_id
       where ${where.join(' and ')}
-      order by b.arrival_date desc, b.reservation_number desc limit ${limit}`,
+      order by ${ARR} desc, b.reservation_number desc limit ${limit}`,
     params,
   )
   return rows
@@ -292,7 +300,17 @@ export async function bookingDetail(id: number) {
     'select id, at, kind, summary, changes from cl_booking_events where reservation_room_id = $1 order by at desc',
     [id],
   )
-  return { ...b, nightsDetail: nights, events }
+  const services = await q<any>(
+    `select id, name, item_name, total::float as total, is_room, period_from::text as period_from, period_to::text as period_to,
+            created_at_pms, deleted from cl_booking_services where reservation_room_id = $1 order by created_at_pms`,
+    [id],
+  )
+  const payments = await q<any>(
+    `select id, amount::float as amount, paid_at, type_name, description, created_by, deleted
+       from cl_booking_payments where reservation_room_id = $1 order by paid_at`,
+    [id],
+  )
+  return { ...b, nightsDetail: nights, events, services, payments }
 }
 
 // ---------------- Doanh thu ----------------
@@ -310,7 +328,7 @@ export async function revenueYear(yearIn?: number) {
     `select to_char(d, 'YYYY-MM') as month, ${source} as source, ${segment} as segment, coalesce(r.name, b.room_name, 'Chưa gán') as room,
             count(*)::int as nights
        from cl_bookings b left join cl_rooms r on r.room_id = b.room_id,
-            generate_series(b.arrival_date, ${DEP} - 1, interval '1 day') d
+            generate_series(${ARR}, ${DEP} - 1, interval '1 day') d
       where ${ACTIVE} and d >= $1::date and d < $2::date
       group by 1,2,3,4`,
     [start, end],
@@ -325,6 +343,23 @@ export async function revenueYear(yearIn?: number) {
     [start, end],
   )
 
+  // Thực thu (theo ngày thu tiền, gồm cả booking đã huỷ có cọc/hoàn) và dịch vụ khác (không phải tiền phòng)
+  const collectedRows = await q<any>(
+    `select to_char(p.paid_at at time zone '${config.timezone}', 'YYYY-MM') as month, sum(p.amount)::float as amount, count(*)::int as n
+       from cl_booking_payments p join cl_bookings b on b.reservation_room_id = p.reservation_room_id
+      where not p.deleted and b.missing_since is null
+        and (p.paid_at at time zone '${config.timezone}')::date >= $1::date and (p.paid_at at time zone '${config.timezone}')::date < $2::date
+      group by 1`,
+    [start, end],
+  )
+  const otherRows = await q<any>(
+    `select to_char(sv.created_at_pms at time zone '${config.timezone}', 'YYYY-MM') as month, sum(sv.total)::float as amount
+       from cl_booking_services sv join cl_bookings b on b.reservation_room_id = sv.reservation_room_id
+      where not sv.deleted and not sv.is_room and ${ACTIVE}
+        and (sv.created_at_pms at time zone '${config.timezone}')::date >= $1::date and (sv.created_at_pms at time zone '${config.timezone}')::date < $2::date
+      group by 1`,
+    [start, end],
+  )
   const months = Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, '0')}`)
   const daysIn = (m: string) => new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)), 0).getDate()
   const agg = (key: 'source' | 'segment' | 'room') => {
@@ -362,19 +397,22 @@ export async function revenueYear(yearIn?: number) {
       revpar: available ? revenue / available : 0,
       bySegment,
       bySource,
+      collected: collectedRows.find((r) => r.month === m)?.amount ?? 0,
+      payments: collectedRows.find((r) => r.month === m)?.n ?? 0,
+      otherServices: otherRows.find((r) => r.month === m)?.amount ?? 0,
     }
   })
 
   const missingPrice = await q<any>(
     `select ${BOOKING_COLS} from cl_bookings b left join cl_rooms r on r.room_id = b.room_id
-      where ${ACTIVE} and b.arrival_date < $2::date and ${DEP} > $1::date
+      where ${ACTIVE} and ${ARR} < $2::date and ${DEP} > $1::date
         and coalesce(b.room_total, b.price * greatest(b.nights, 1), 0) < ${MIN_NIGHT} * greatest(b.nights, 1)
-      order by b.arrival_date`,
+      order by ${ARR}`,
     [start, end],
   )
   const notSynced = await q1<any>(
     `select count(*)::int n from cl_bookings b where ${ACTIVE} and b.charges_synced_at is null
-       and b.arrival_date < $2::date and ${DEP} > $1::date`,
+       and ${ARR} < $2::date and ${DEP} > $1::date`,
     [start, end],
   )
   const total = monthly.reduce(
@@ -406,11 +444,11 @@ export async function revenueDaily(monthIn?: string) {
   const rows = await q<any>(
     `with days as (select d::date as dd from generate_series($1::date, ($1::date + interval '1 month' - interval '1 day'), interval '1 day') d)
      select days.dd::text as day,
-            (select count(*) from cl_bookings b where ${ACTIVE} and b.arrival_date <= days.dd and ${DEP} > days.dd)::int as sold,
+            (select count(*) from cl_bookings b where ${ACTIVE} and ${ARR} <= days.dd and ${DEP} > days.dd)::int as sold,
             (select coalesce(sum(n.amount),0) from cl_booking_nights n join cl_bookings b on b.reservation_room_id = n.reservation_room_id
               where ${ACTIVE} and n.night = days.dd)::float as revenue,
-            (select count(*) from cl_bookings b where ${ACTIVE} and b.arrival_date = days.dd)::int as arrivals,
-            (select count(*) from cl_bookings b where ${ACTIVE} and b.departure_date = days.dd and b.arrival_date < days.dd)::int as departures
+            (select count(*) from cl_bookings b where ${ACTIVE} and ${ARR} = days.dd)::int as arrivals,
+            (select count(*) from cl_bookings b where ${ACTIVE} and b.departure_date = days.dd and ${ARR} < days.dd)::int as departures
        from days order by days.dd`,
     [start],
   )

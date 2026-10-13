@@ -3,6 +3,7 @@ import { safeRouter } from '../app/safe-router.js'
 import { clientIp, hasPerm, requirePerm } from '../app/auth.js'
 import { audit, q, q1 } from '../app/db.js'
 import { connectWithPasted, disconnect } from './ezcloud.js'
+import { WriteError, checkin, checkinPreview, recentWrites, setPrice, writesEnabled } from './writes.js'
 import {
   bookingDetail,
   calendar,
@@ -23,7 +24,7 @@ const wrap = (fn: (req: any, res: any) => Promise<any>) => (req: any, res: any) 
     res.status(500).json({ error: 'server_error', message: e.message })
   })
 
-colivingRouter.get('/status', requirePerm(...ANY), wrap(async (_req, res) => res.json(await syncState())))
+colivingRouter.get('/status', requirePerm(...ANY), wrap(async (_req, res) => res.json({ ...(await syncState()), writesEnabled: writesEnabled() })))
 
 colivingRouter.get('/overview', requirePerm('coliving.overview'), wrap(async (req, res) => res.json(await overview(req.query.date))))
 
@@ -87,3 +88,44 @@ colivingRouter.delete('/connect', requirePerm('coliving.manage'), wrap(async (re
   await audit(req.user.id, 'ezcloud_disconnect', null, null, clientIp(req))
   res.json({ ok: true })
 }))
+
+// ----- GHI lên ezCloud (quyền coliving.write + EZCLOUD_WRITE_ENABLED=true) -----
+const writeErr = (res: any, e: unknown) => {
+  if (e instanceof WriteError) return res.status(e.code === 'disabled' ? 403 : 400).json({ error: e.code, message: e.message, data: e.data ?? null })
+  throw e
+}
+const actor = (req: any) => ({ id: req.user.id, email: req.user.email })
+
+colivingRouter.get('/bookings/:id/checkin-preview', requirePerm('coliving.write'), wrap(async (req, res) => {
+  try {
+    const { _past, _client, ...p } = await checkinPreview(Number(req.params.id))
+    res.json({ ...p, writesEnabled: writesEnabled() })
+  } catch (e) {
+    writeErr(res, e)
+  }
+}))
+
+colivingRouter.post('/bookings/:id/price', requirePerm('coliving.write'), wrap(async (req, res) => {
+  try {
+    const b = req.body ?? {}
+    const r = await setPrice(Number(req.params.id), { mode: b.mode, amount: Number(b.amount), fromNight: b.fromNight || undefined, dryRun: !!b.dryRun }, actor(req))
+    if (!b.dryRun) await audit(req.user.id, 'ezcloud_set_price', String(req.params.id), { mode: b.mode, amount: b.amount, fromNight: b.fromNight }, clientIp(req))
+    res.json(r)
+  } catch (e) {
+    writeErr(res, e)
+  }
+}))
+
+colivingRouter.post('/bookings/:id/checkin', requirePerm('coliving.write'), wrap(async (req, res) => {
+  try {
+    const r = await checkin(Number(req.params.id), actor(req))
+    await audit(req.user.id, 'ezcloud_checkin', String(req.params.id), r, clientIp(req))
+    res.json(r)
+  } catch (e) {
+    writeErr(res, e)
+  }
+}))
+
+colivingRouter.get('/writes', requirePerm('coliving.manage', 'coliving.write'), wrap(async (req, res) =>
+  res.json(await recentWrites(Math.min(200, Number(req.query.limit ?? 50)))),
+))

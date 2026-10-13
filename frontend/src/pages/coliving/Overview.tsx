@@ -76,7 +76,7 @@ export default function Overview() {
             {can(user, 'coliving.revenue') ? (
               <>
                 <Stat label={`Doanh thu tháng ${data.day.slice(5, 7)} (tới ${dm(data.day)})`} value={shortMoney(data.mtd.revenue)} sub={`ADR ${shortMoney(data.mtd.adr)} · RevPAR ${shortMoney(data.mtd.revpar)}`} />
-                <Stat label="Công suất tháng" value={pct(data.mtd.occupancy)} sub={`${data.mtd.soldNights}/${data.mtd.availableNights} đêm phòng`} />
+                <Stat label="Công suất tháng" value={pct(data.mtd.occupancy)} sub={`${data.mtd.soldNights}/${data.mtd.availableNights} đêm phòng · thực thu ${shortMoney(data.mtd.collected)}`} />
               </>
             ) : (
               <Stat label="Cảnh báo" value={data.alerts.reduce((a, x) => a + x.items.length, 0)} tone="warn" />

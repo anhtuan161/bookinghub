@@ -40,6 +40,7 @@ export const MENUS: PermGroup[] = [
       { key: 'coliving.bookings', label: 'Danh sách booking', description: 'Tên, SĐT, email khách', sensitive: true },
       { key: 'coliving.revenue', label: 'Báo cáo doanh thu', sensitive: true },
       { key: 'coliving.manage', label: 'Kết nối & đồng bộ ezCloud', description: 'Dán phiên ezCloud, chạy đồng bộ' },
+      { key: 'coliving.write', label: 'Ghi lên ezCloud', description: 'Nhập giá phòng, check-in (thay đổi dữ liệu thật trên ezCloud)', sensitive: true },
     ],
   },
   {
@@ -54,7 +55,8 @@ export const isKnownPermission = (k: string) => ALL_PERMISSIONS.includes(k)
 
 // Mẫu nhanh khi cấp quyền (chỉ là gợi ý ở UI, DB vẫn lưu từng quyền).
 export const PRESETS = [
-  { key: 'coliving_manager', label: 'Quản lý Coliving', permissions: MENUS[1].items.map((i) => i.key) },
+  { key: 'coliving_manager', label: 'Quản lý Coliving (chỉ xem)', permissions: MENUS[1].items.map((i) => i.key).filter((k) => k !== 'coliving.write') },
+  { key: 'coliving_operator', label: 'Quản lý Coliving + ghi ezCloud', permissions: MENUS[1].items.map((i) => i.key) },
   { key: 'coliving_staff', label: 'Lễ tân Coliving', permissions: ['coliving.overview', 'coliving.calendar', 'coliving.bookings'] },
   { key: 'villa_sale', label: 'Sale villa', permissions: ['bookinghub.search', 'bookinghub.villas', 'bookinghub.requests'] },
   { key: 'villa_ops', label: 'Vận hành Booking Hub', permissions: MENUS[0].items.map((i) => i.key) },

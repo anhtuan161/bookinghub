@@ -248,45 +248,26 @@ async function runSyncLocked(trigger: string): Promise<SyncStats> {
       }
     })
 
-    // ---------- 2. Tiền phòng theo đêm ----------
+    // ---------- 2. Tiền phòng theo đêm + dịch vụ + khoản thu ----------
     const today = todayLocal()
     const need = await q<any>(
       `select reservation_room_id, hash from cl_bookings
-        where missing_since is null and coalesce(status,'') not in ('CANCELLED','NOSHOW')
+        where missing_since is null
           and (charges_hash is distinct from hash
-               or (departure_date >= $1::date - 1 and (charges_synced_at is null or charges_synced_at < now() - interval '20 hours')))
+               or details_synced_at is null
+               or (coalesce(status,'') not in ('CANCELLED','NOSHOW') and departure_date >= $1::date - 7
+                   and (charges_synced_at is null or charges_synced_at < now() - interval '20 hours')))
         order by departure_date desc nulls last limit $2`,
       [today, config.ezcloudChargesPerRun],
     )
     for (const b of need) {
       try {
-        const r = await client.roomCharges(Number(b.reservation_room_id))
-        const list: any[] = Array.isArray(r) ? r : r?.roomCharges ?? []
-        const nights = new Map<string, number>()
-        for (const ch of list) {
-          if (ch?.Status === false) continue
-          const m = /^DAY(\d{4})(\d{2})(\d{2})$/.exec(String(ch?.PriceKey ?? ''))
-          const night = m ? `${m[1]}-${m[2]}-${m[3]}` : ch?.StartDate ? localDate(ch.StartDate) : null
-          if (!night) continue
-          nights.set(night, (nights.get(night) ?? 0) + Number(ch?.Value ?? 0))
-        }
-        const total = [...nights.values()].reduce((a, v) => a + v, 0)
-        await tx(async (c) => {
-          await c.query('delete from cl_booking_nights where reservation_room_id = $1', [b.reservation_room_id])
-          for (const [night, amount] of nights)
-            await c.query('insert into cl_booking_nights(reservation_room_id, night, amount) values($1,$2,$3)', [
-              b.reservation_room_id, night, amount,
-            ])
-          await c.query(
-            'update cl_bookings set charges_hash = $2, charges_synced_at = now(), room_total = $3 where reservation_room_id = $1',
-            [b.reservation_room_id, b.hash, total],
-          )
-        })
+        await refreshBookingDetails(client, Number(b.reservation_room_id), b.hash)
         stats.chargesFetched++
       } catch (e) {
         if (e instanceof EzAuthError) throw e
         stats.chargesFailed++
-        console.error('[sync] charges', b.reservation_room_id, (e as Error).message)
+        console.error('[sync] details', b.reservation_room_id, (e as Error).message)
       }
       await sleep(config.ezcloudRequestGapMs)
     }
@@ -342,4 +323,107 @@ async function runSyncLocked(trigger: string): Promise<SyncStats> {
     await patchStatus({ lastError: msg, lastErrorAt: new Date().toISOString() }).catch(() => {})
     throw e
   }
+}
+
+// =============================================================
+//  Chi tiết 1 booking: tiền phòng từng đêm (GetRoomChargesList) + dịch vụ & khoản thu
+//  (GetReservationRoomV3 → nếu có thì ProcessReservation để lấy mô tả/ngày).
+//  Dịch vụ "Phòng cả ngày dd/mm/yyyy - dd/mm/yyyy" (check-in muộn / no-show) được chia đều vào các đêm đó
+//  và kéo stay_from về ngày bắt đầu ở thật. Dùng chung cho đồng bộ định kỳ và sau khi GHI từ webapp.
+// =============================================================
+const ROOM_SVC_RE = /(\d{2})\/(\d{2})\/(\d{4})(?:\s*-\s*(\d{2})\/(\d{2})\/(\d{4}))?/
+const ymd = (d: string, m: string, y: string) => `${y}-${m}-${d}`
+const addDay = (iso: string, n: number) => {
+  const x = new Date(iso + 'T00:00:00Z')
+  x.setUTCDate(x.getUTCDate() + n)
+  return x.toISOString().slice(0, 10)
+}
+
+export async function refreshBookingDetails(client: EzClient, rrId: number, hash: string | null) {
+  const gap = () => sleep(config.ezcloudRequestGapMs)
+  const r = await client.roomCharges(rrId)
+  const list: any[] = Array.isArray(r) ? r : r?.roomCharges ?? []
+  const nights = new Map<string, number>()
+  for (const ch of list) {
+    if (ch?.Status === false) continue
+    const m = /^DAY(\d{4})(\d{2})(\d{2})$/.exec(String(ch?.PriceKey ?? ''))
+    const night = m ? `${m[1]}-${m[2]}-${m[3]}` : ch?.StartDate ? localDate(ch.StartDate) : null
+    if (!night) continue
+    nights.set(night, (nights.get(night) ?? 0) + Number(ch?.Value ?? 0))
+  }
+
+  await gap()
+  const v3 = await client.reservationRoomV3(rrId)
+  const hasExtra =
+    (v3?.RoomExtraServicesList ?? []).some((x: any) => !x?.IsDeleted) || (v3?.PaymentsList ?? []).length > 0
+  let services: any[] = []
+  let payments: any[] = []
+  if (hasExtra) {
+    await gap()
+    const pr = await client.processReservation(rrId, todayLocal())
+    services = (pr?.BookingServiceList ?? []).flatMap((g: any) => g?.LstRoomExtraServiceModels ?? [])
+    payments = pr?.PaymentList ?? []
+  }
+
+  const svcRows = services.map((x: any) => {
+    const total = Number(x?.TotalAmount ?? Number(x?.Amount ?? 0) * Number(x?.Quantity ?? 1))
+    const item = String(x?.RoomExtraServiceItemName ?? '')
+    const m = ROOM_SVC_RE.exec(item)
+    const isRoom = !!m && String(x?.RoomExtraServiceName ?? '') === 'EXTRA_SERVICES' && /phòng|room/i.test(item)
+    const from = m ? ymd(m[1], m[2], m[3]) : null
+    const to = m ? (m[4] ? ymd(m[4], m[5], m[6]) : from) : null
+    return {
+      id: Number(x?.RoomExtraServiceId), name: x?.RoomExtraServiceName ?? null, item, amount: Number(x?.Amount ?? 0),
+      quantity: Number(x?.Quantity ?? 1), total, isRoom, from: isRoom ? from : null, to: isRoom ? to : null,
+      created: x?.CreatedDate ?? null, deleted: !!x?.IsDeleted,
+    }
+  }).filter((x) => x.id)
+
+  // chia tiền dịch vụ "Phòng cả ngày ..." vào từng đêm
+  let stayFrom: string | null = null
+  for (const sv of svcRows) {
+    if (!sv.isRoom || sv.deleted || !sv.from || !sv.to || sv.to < sv.from) continue
+    const days: string[] = []
+    for (let d = sv.from; d <= sv.to && days.length < 400; d = addDay(d, 1)) days.push(d)
+    const per = days.length ? Math.round((sv.total / days.length) * 100) / 100 : 0
+    for (const d of days) nights.set(d, (nights.get(d) ?? 0) + per)
+    if (!stayFrom || sv.from < stayFrom) stayFrom = sv.from
+  }
+
+  const payRows = payments.map((p: any) => ({
+    id: Number(p?.PaymentId), amount: Number(p?.Amount ?? 0), paidAt: p?.CreatedDate ?? null, type: p?.PaymentTypeName ?? null,
+    method: p?.PaymentMethodId ?? null, desc: p?.PaymentDescription ?? null, by: p?.UserCreated ?? null, deleted: !!p?.IsDeleted,
+  })).filter((p) => p.id)
+
+  const roomTotal = [...nights.values()].reduce((a, v) => a + v, 0)
+  const servicesTotal = svcRows.filter((x) => !x.deleted).reduce((a, x) => a + x.total, 0)
+  const paidTotal = payRows.filter((p) => !p.deleted).reduce((a, p) => a + p.amount, 0)
+
+  await tx(async (c) => {
+    await c.query('delete from cl_booking_nights where reservation_room_id = $1', [rrId])
+    for (const [night, amount] of nights)
+      await c.query('insert into cl_booking_nights(reservation_room_id, night, amount) values($1,$2,$3)', [rrId, night, amount])
+    await c.query('delete from cl_booking_services where reservation_room_id = $1', [rrId])
+    for (const x of svcRows)
+      await c.query(
+        `insert into cl_booking_services(id, reservation_room_id, name, item_name, amount, quantity, total, is_room, period_from, period_to, created_at_pms, deleted)
+         values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) on conflict(id) do nothing`,
+        [x.id, rrId, x.name, x.item, x.amount, x.quantity, x.total, x.isRoom, x.from, x.to, x.created, x.deleted],
+      )
+    await c.query('delete from cl_booking_payments where reservation_room_id = $1', [rrId])
+    for (const p of payRows)
+      await c.query(
+        `insert into cl_booking_payments(id, reservation_room_id, amount, paid_at, type_name, method_id, description, created_by, deleted)
+         values($1,$2,$3,$4,$5,$6,$7,$8,$9) on conflict(id) do nothing`,
+        [p.id, rrId, p.amount, p.paidAt, p.type, p.method, p.desc, p.by, p.deleted],
+      )
+    await c.query(
+      `update cl_bookings set charges_hash = coalesce($2, charges_hash), charges_synced_at = now(), details_synced_at = now(),
+              room_total = $3, services_total = $4, paid_total = $5,
+              stay_from = case when $6::date is not null and $6::date < arrival_date then $6::date else null end
+        where reservation_room_id = $1`,
+      [rrId, hash, roomTotal, servicesTotal, paidTotal, stayFrom],
+    )
+  })
+  return { nights: nights.size, roomTotal, servicesTotal, paidTotal, stayFrom, v3 }
 }

@@ -94,12 +94,17 @@ export default function Revenue() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
             <Stat label={`Doanh thu phòng ${year}`} value={shortMoney(data.total.revenue)} sub={money(data.total.revenue)} />
             <Stat label="Đêm phòng bán" value={data.total.nights.toLocaleString('vi-VN')} sub={`/${data.total.available.toLocaleString('vi-VN')} có thể bán`} />
             <Stat label="Công suất" value={pct(data.total.occupancy)} sub={`${data.rooms} phòng`} />
             <Stat label="ADR (giá TB/đêm)" value={shortMoney(data.total.adr)} />
             <Stat label="RevPAR" value={shortMoney(data.total.revpar)} sub="doanh thu / đêm phòng có thể bán" />
+            <Stat
+              label={`Thực thu ${year}`}
+              value={shortMoney(data.total.collected)}
+              sub={`theo ngày thu tiền${data.total.otherServices ? ` · dịch vụ khác ${shortMoney(data.total.otherServices)}` : ''}`}
+            />
           </div>
 
           <section className="card p-5">
@@ -145,6 +150,7 @@ export default function Revenue() {
                   <th className="px-3 py-2 text-right">Doanh thu</th>
                   <th className="px-3 py-2 text-right">ADR</th>
                   <th className="px-3 py-2 text-right">RevPAR</th>
+                  <th className="px-3 py-2 text-right">Thực thu</th>
                   <th className="px-3 py-2 text-right">Ngắn ngày</th>
                   <th className="px-3 py-2 text-right">Trung hạn</th>
                   <th className="px-3 py-2 text-right">Dài hạn</th>
@@ -159,6 +165,7 @@ export default function Revenue() {
                     <td className="px-3 py-2 text-right font-semibold">{money(m.revenue)}</td>
                     <td className="px-3 py-2 text-right">{money(m.adr)}</td>
                     <td className="px-3 py-2 text-right">{money(m.revpar)}</td>
+                    <td className="px-3 py-2 text-right text-emerald-700">{m.collected ? money(m.collected) : "—"}</td>
                     <td className="px-3 py-2 text-right text-slate-500">{shortMoney(m.bySegment.short)}</td>
                     <td className="px-3 py-2 text-right text-slate-500">{shortMoney(m.bySegment.mid)}</td>
                     <td className="px-3 py-2 text-right text-slate-500">{shortMoney(m.bySegment.long)}</td>
