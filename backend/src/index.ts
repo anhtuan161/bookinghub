@@ -18,6 +18,19 @@ app.disable('x-powered-by')
 if (config.trustProxy === 'true') app.set('trust proxy', true)
 else if (config.trustProxy && config.trustProxy !== 'false') app.set('trust proxy', config.trustProxy)
 
+// Tên miền public (PUBLIC_URL https) mà đến bằng HTTP → chuyển sang HTTPS. Truy cập nội bộ bằng IP không bị ảnh hưởng.
+const publicHost = (() => {
+  try {
+    return config.publicUrl.startsWith('https://') ? new URL(config.publicUrl).hostname : ''
+  } catch {
+    return ''
+  }
+})()
+app.use((req, res, next) => {
+  if (publicHost && req.hostname === publicHost && !req.secure) return res.redirect(301, `https://${publicHost}${req.originalUrl}`)
+  next()
+})
+
 // Header bảo mật (web public qua Cloudflare). CSP cho phép Google Fonts (index.html).
 app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff')
