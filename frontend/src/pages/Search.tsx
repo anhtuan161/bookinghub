@@ -155,11 +155,11 @@ export default function Search() {
                     </div>
                   )}
                   <div className="mt-4 flex gap-2">
-                    <button onClick={() => navigate(`/property/${r.property.id}`)} className="btn-ghost btn-sm flex-1">
+                    <button onClick={() => navigate(`/booking-hub/property/${r.property.id}`)} className="btn-ghost btn-sm flex-1">
                       Xem chi tiết
                     </button>
                     <button
-                      onClick={() => navigate(`/property/${r.property.id}?book=1&checkin=${checkin}&checkout=${checkout}&guests=${guests}`)}
+                      onClick={() => navigate(`/booking-hub/property/${r.property.id}?book=1&checkin=${checkin}&checkout=${checkout}&guests=${guests}`)}
                       className="btn-primary btn-sm flex-1"
                     >
                       Giữ phòng

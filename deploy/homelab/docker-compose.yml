@@ -1,0 +1,64 @@
+# Booking Hub + Thomstay Coliving tren docker-core: /data/compose/bookinghub/docker-compose.yml
+# Nguon: /data/compose/bookinghub/src (deploy.sh day ban `git archive` cua commit). Secret: /data/.secrets/bookinghub/ (uid 1000, 400).
+# Cong 8097 chi LAN/Tailscale. Public (Cloudflare) chi khi da co admin + COOKIE_SECURE=true + PUBLIC_URL https.
+x-app: &app
+  image: bookinghub:${RELEASE:-local}
+  restart: unless-stopped
+  environment: &env
+    TZ: Asia/Ho_Chi_Minh
+    DEMO_MODE: "false"              # LIVE: doc villa that tu Supabase
+    BACKEND_SYNC_ENABLED: "false"   # Google Sheet sync do n8n lam, backend khong chay
+    DATABASE_URL_FILE: /run/bh/supabase_database_url
+    APP_DATABASE_URL_FILE: /run/bh/app_database_url
+    APP_SECRET_KEY_FILE: /run/bh/app_secret_key
+    TELEGRAM_BOT_TOKEN_FILE: /run/bh/telegram_bot_token
+    TELEGRAM_CHAT_ID_FILE: /run/bh/telegram_chat_id
+    BOOTSTRAP_ADMIN_EMAILS: "${BOOTSTRAP_ADMIN_EMAILS:-}"
+    PUBLIC_URL: "${PUBLIC_URL:-http://100.86.217.48:8097}"
+    COOKIE_SECURE: "${COOKIE_SECURE:-false}"
+    TRUST_PROXY: "${TRUST_PROXY:-false}"
+    EZCLOUD_SYNC_MINUTES: "${EZCLOUD_SYNC_MINUTES:-15}"
+    DAILY_SUMMARY_HOUR: "7"
+  volumes:
+    - /data/.secrets/bookinghub:/run/bh:ro
+  networks: [proxy]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  bookinghub:
+    <<: *app
+    build:
+      context: ./src
+      args: { RELEASE: "${RELEASE:-local}" }
+    container_name: bookinghub
+    command: ["node", "dist/index.js"]
+    ports: ["8097:8787"]
+    mem_limit: 384m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  bookinghub-worker:
+    <<: *app
+    container_name: bookinghub-worker
+    command: ["node", "dist/worker.js"]
+    depends_on:
+      bookinghub: { condition: service_healthy }
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(Date.now()-Number(require('fs').readFileSync('/tmp/worker-heartbeat','utf8'))<120000?0:1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+networks:
+  proxy:
+    external: true

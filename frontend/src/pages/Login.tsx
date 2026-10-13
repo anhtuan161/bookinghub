@@ -1,78 +1,80 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { authEnabled, login, signIn } from '../lib/auth'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import AuthShell, { FormError } from '../components/AuthShell'
+import { demoMode, login } from '../lib/auth'
+import { homePath } from '../lib/nav'
+import { useSession } from '../lib/session'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [name, setName] = useState('')
+  const location = useLocation() as { state?: { from?: string } }
+  const { user, setUser } = useSession()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
 
+  if (user) return <Navigate to={user.status === 'active' ? location.state?.from || homePath(user) : '/pending'} replace />
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setErr('')
-    if (authEnabled) {
-      setLoading(true)
-      const error = await signIn(email.trim(), password)
+    setLoading(true)
+    try {
+      const u = await login(email.trim(), password)
+      setUser(u)
+      navigate(u.status === 'active' ? location.state?.from || homePath(u) : '/pending', { replace: true })
+    } catch (e: any) {
+      setErr(e.message || 'Đăng nhập thất bại')
+    } finally {
       setLoading(false)
-      if (error) {
-        setErr('Sai email hoặc mật khẩu')
-        return
-      }
-    } else {
-      login(name.trim() || 'Nhân viên')
     }
-    navigate('/search')
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-slate-100 to-brand-50 p-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-3xl shadow-pop">
-            🏡
-          </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">Villa Booking Hub</h1>
-          <p className="mt-1 text-sm text-slate-500">Hệ thống quản trị booking nội bộ</p>
+    <AuthShell title="Thomstay Hub" subtitle="Booking Hub · Thomstay Coliving">
+      <form onSubmit={submit} className="card p-7">
+        <div className="mb-4">
+          <label className="label">{demoMode ? 'Tên nhân viên (demo)' : 'Email'}</label>
+          <input
+            autoFocus
+            type={demoMode ? 'text' : 'email'}
+            autoComplete="username"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={demoMode ? 'Ví dụ: Lan' : 'ban@congty.com'}
+            className="input"
+            required
+          />
         </div>
-
-        <form onSubmit={submit} className="card p-7">
-          {authEnabled ? (
-            <>
-              <div className="mb-4">
-                <label className="label">Email</label>
-                <input autoFocus type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ban@congty.com" className="input" />
-              </div>
-              <div className="mb-2">
-                <label className="label">Mật khẩu</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="•••••••" className="input" />
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="mb-4">
-                <label className="label">Tên nhân viên</label>
-                <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ví dụ: Lan" className="input" />
-              </div>
-              <div className="mb-2">
-                <label className="label">Mật khẩu</label>
-                <input type="password" placeholder="••••••• (demo: nhập gì cũng được)" className="input" />
-              </div>
-            </>
-          )}
-
-          {err && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{err}</div>}
-
-          <button disabled={loading} className="btn-primary mt-5 w-full py-3 text-base">
-            {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
-          </button>
-          <p className="mt-4 text-center text-xs text-slate-400">
-            {authEnabled ? 'Tài khoản do quản lý tạo trong hệ thống.' : 'Bản demo dùng dữ liệu mẫu — không cần tài khoản thật.'}
-          </p>
-        </form>
-      </div>
-    </div>
+        <div className="mb-2">
+          <label className="label">Mật khẩu</label>
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            className="input"
+            required={!demoMode}
+          />
+        </div>
+        <FormError msg={err} />
+        <button disabled={loading} className="btn-primary mt-5 w-full py-3 text-base">
+          {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
+        </button>
+        {!demoMode && (
+          <div className="mt-4 space-y-1 text-center text-sm text-slate-500">
+            <p>
+              Chưa có tài khoản?{' '}
+              <Link to="/register" className="font-semibold text-brand-600 hover:underline">
+                Đăng ký bằng email
+              </Link>
+            </p>
+            <p className="text-xs text-slate-400">Quên mật khẩu? Liên hệ quản trị để nhận link đặt lại.</p>
+          </div>
+        )}
+      </form>
+    </AuthShell>
   )
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Modal from '../components/Modal'
 import { createBookingRequest, getAvailability, getProperty } from '../lib/api'
-import { getUser } from '../lib/auth'
+import { useSession } from '../lib/session'
 import { onDbRefresh } from '../lib/refresh'
 import { showToast } from '../lib/toast'
 import type { AvailabilityDay, Channel, Property } from '../lib/types'
@@ -143,7 +143,8 @@ export default function PropertyDetail() {
             <span className="text-slate-300">•</span>
             <a href={property.sourceSheetUrl} target="_blank" className="font-medium text-brand-600 hover:underline">
               Mở sheet gốc
-            </a>
+            </a>
+
           </div>
           {fr.stale && (
             <div className="mt-3 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
@@ -238,6 +239,7 @@ function BookModal({
   defaults: { checkin: string; checkout: string; guests: number }
   onClose: () => void
 }) {
+  const { user } = useSession()
   const [form, setForm] = useState({
     customerName: '',
     customerContact: '',
@@ -263,7 +265,7 @@ function BookModal({
     await createBookingRequest({
       propertyId: property.id,
       propertyName: property.name,
-      assignee: getUser() || 'Nhân viên',
+      assignee: user?.fullName || user?.email || 'Nhân viên',
       ...form,
     })
     showToast('Đã tạo yêu cầu giữ phòng')

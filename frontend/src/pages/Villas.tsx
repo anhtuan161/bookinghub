@@ -142,7 +142,7 @@ export default function Villas() {
                     )}
 
                     <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
-                      <button onClick={() => navigate(`/property/${p.id}`)} className="btn-ghost btn-sm">
+                      <button onClick={() => navigate(`/booking-hub/property/${p.id}`)} className="btn-ghost btn-sm">
                         Xem lịch
                       </button>
                       {p.mapUrl && (

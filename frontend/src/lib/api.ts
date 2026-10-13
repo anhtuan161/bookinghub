@@ -23,7 +23,7 @@ import {
   parseISO,
   startOfToday,
 } from './utils'
-import { getAccessToken } from './auth'
+import { API_URL, api } from './http'
 
 function delay<T>(value: T, ms = 250): Promise<T> {
   return new Promise((res) => setTimeout(() => res(value), ms))
@@ -38,22 +38,9 @@ function isoMinsAgo(mins: number): string {
 //  - Đặt VITE_API_URL (vd http://localhost:8787/api) → gọi backend.
 //  - Không đặt → dùng MOCK bên dưới (vẫn chạy được standalone).
 // =============================================================
-const API_URL: string | undefined = import.meta.env.VITE_API_URL
-
-async function http<T>(path: string, opts?: RequestInit): Promise<T> {
-  const token = await getAccessToken()
-  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(opts?.headers as any) }
-  if (token) headers.Authorization = `Bearer ${token}`
-  const method = (opts?.method ?? 'GET').toUpperCase()
-  let url = `${API_URL}${path}`
-  if (method === 'GET') {
-    const sep = url.includes('?') ? '&' : '?'
-    url = `${url}${sep}_ts=${Date.now()}`
-  }
-  const res = await fetch(url, { ...opts, headers, cache: 'no-store' })
-  if (res.status === 401) throw new Error('Phiên đăng nhập hết hạn — vui lòng đăng nhập lại')
-  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`)
-  return res.json() as Promise<T>
+// API_URL lấy từ ./http (VITE_API_URL). Cookie phiên được gửi kèm tự động.
+function http<T>(path: string, opts?: RequestInit): Promise<T> {
+  return api<T>(path, opts)
 }
 
 let lastReviewCount = 0 // cập nhật mỗi lần getReviewQueue chạy (để badge sidebar có số)
