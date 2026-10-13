@@ -27,6 +27,7 @@ Menu (moi muc = 1 quyen):
 | | Booking (co SDT/email khach) | `coliving.bookings` | `/coliving/bookings` |
 | | Doanh thu | `coliving.revenue` | `/coliving/revenue` |
 | | Ket noi ezCloud | `coliving.manage` | `/coliving/sync` |
+| | (thao tac) Ghi len ezCloud: nhap gia, check-in - nut trong cua so chi tiet booking | `coliving.write` | - |
 | Booking Hub | Tim phong / Danh sach villa / Can kiem tra / Yeu cau giu phong / Nguon du lieu / Tong quan villa | `bookinghub.search/villas/review/requests/sources/dashboard` | `/booking-hub/*` (link cu `/search`... tu chuyen) |
 | Quan tri | Nguoi dung & quyen | `admin.users` | `/admin/users` |
 
@@ -83,6 +84,13 @@ Che do: co `APP_DATABASE_URL` -> dang nhap that + Coliving. Khong co -> che do c
 - Canh bao Tong quan: trung phong (2 booking chong ngay cung phong), chua gan phong, qua ngay den chua check-in, qua ngay di chua check-out, BOOKED da qua ngay di (60 ngay), chua co gia phong, dong bo tre (> 3 chu ky).
 - Doi chieu luot dau voi ezCloud THAT (2026-10-13): 604 booking, 11 phong, tien dem 427/427. Cong suat dem nay he thong = 7/11 (theo ngay o), ezCloud Dashboard = 11/11 vi ezCloud tinh ca phong co booking BOOKED da qua ngay di chua check-in/out (101F, P203, P204, P304). Giu cach tinh theo ngay; trang Tong quan hien them so cua ezCloud + canh bao `stale_booked`. Canh bao gia: < 50.000d/dem (`MIN_NIGHT` trong queries.ts) = chua co gia/gia sai (vd FAMILY 1d/dem).
 - Du lieu goc (2026-10-13): 11 phong, 604 booking (2025-07 -> 2026-07+), nhieu booking dai han gia 0 -> user se sua gia tren ezCloud (doanh thu that do user nhap sai truoc do).
+- **GHI len ezCloud (2026-10-13)** - `backend/src/coliving/writes.ts`, bat bang `EZCLOUD_WRITE_ENABLED=true` (`/data/compose/bookinghub/.env`, hien BAT) + quyen `coliving.write` (admin co san; mau "Quan ly Coliving + ghi ezCloud"). Nut nam trong cua so chi tiet booking:
+  - **Nhap gia**: theo dem, hoac giá thang (moi dem = tien thang / so ngay cua thang do), tuy chon "chi doi tu dem X". Xem truoc -> xac nhan -> `UpdatePriceAdjustment` -> doc lai `GetRoomChargesList` so tung dem. Chi BOOKED/CHECKIN, chi kieu DAY_PRICE.
+  - **Check-in**: xem truoc so dem da qua; ezCloud doi ngay den sang luc check-in, webapp them dich vu "Phong ca ngay ..." = tong gia cac dem da qua (giong web ezCloud). Xung dot phong -> bao booking dang chiem. Doc lai V3 phai = CHECKIN.
+  - Sau moi lan ghi: cap nhat trang thai/ngay, lam moi tien phong/dich vu/khoan thu cua booking, su kien `write`, xep 1 luot dong bo day du. Nhat ky: bang `cl_write_log` (+ `app_audit_log`), API `GET /api/coliving/writes`.
+  - Kiem thu ghi voi ezCloud gia: 25/25 (tat ghi, xem truoc/ghi gia thang + doc lai, chi doi tu dem X, so am, check-in co dem da qua + dich vu, check-in dung ngay, xung dot, sai trang thai, nhat ky).
+  - Them thao tac ghi moi: user lam mau tren web ezCloud trong browser cua AI, AI gan bo ghi XHR (`window.__cap`) de lay request that, roi moi viet code + test gia. KHONG doan payload.
+- Dong bo chi tiet (them 2026-10-13): moi booking can lam moi goi `GetRoomChargesList` + `GetReservationRoomV3` (+ `ProcessReservation` neu co dich vu/khoan thu) -> `cl_booking_services`, `cl_booking_payments`, `paid_total`, `services_total`, `stay_from`. Bao cao: "Thuc thu" theo ngay thu tien; dem o tinh tu `stay_from` (check-in muon).
 - Telegram (tuy chon): ghi bot token vao `/data/.secrets/bookinghub/telegram_bot_token`, chat id vao `telegram_chat_id` (user tu nhap), restart worker. Gui: thay doi booking (24h gan nhat, gom 1 tin/luot) + tom tat 7h sang (`DAILY_SUMMARY_HOUR`). Tin co ten khach -> chi dung chat/nhom noi bo.
 
 ## 5. Van hanh
@@ -127,5 +135,7 @@ Backup: DB `bookinghub` nam trong `pg_dumpall` hang dem (`pg-backup.timer`, ma h
 - [ ] USER quyet: merge `feat/coliving-auth` vao `master` va push GitHub? Luu y: ban Vercel/Render se can backend co App DB, neu khong frontend chay che do demo-login.
 
 ## 8. Lich su
+
+- 2026-10-13 12:00 Claude: nut "Mo tren ezCloud" (`#/reservation/<id>`); dong bo dich vu + khoan thu; ghi len ezCloud: nhap gia (dem/thang) + check-in (do that tren #493, test gia 25/25), bat tren server.
 
 - 2026-10-13 Claude: do API ezCloud; dung kho bare + Gitea mirror; them App DB, dang ky/duyet/quyen menu, gom menu Booking Hub, them Thomstay Coliving (worker + 5 trang), Docker 1 image, deploy docker-core :8097; e2e auth 36/36, sync gia 21/21.
