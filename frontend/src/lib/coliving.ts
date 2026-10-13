@@ -173,7 +173,7 @@ export interface CheckinPreview {
   allZero: boolean
   writesEnabled: boolean
 }
-export const setPrice = (id: number, body: { mode: 'night' | 'month'; amount: number; fromNight?: string; dryRun?: boolean }) =>
+export const setPrice = (id: number, body: { mode: 'night' | 'month' | 'total'; amount: number; fromNight?: string; dryRun?: boolean }) =>
   api<{ ok?: boolean; dryRun?: boolean; preview: PricePreview; message?: string }>(`/coliving/bookings/${id}/price`, { method: 'POST', json: body })
 export const getCheckinPreview = (id: number) => api<CheckinPreview>(`/coliving/bookings/${id}/checkin-preview`)
 export const doCheckin = (id: number) =>

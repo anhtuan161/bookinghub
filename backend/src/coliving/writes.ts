@@ -69,8 +69,8 @@ function nightOf(ch: any): string | null {
 
 // ---------------- 1. Nhập giá ----------------
 export interface PriceInput {
-  mode: 'night' | 'month'
-  amount: number // giá 1 đêm (night) hoặc tiền thuê 1 tháng (month)
+  mode: 'night' | 'month' | 'total'
+  amount: number // giá 1 đêm (night) | tiền thuê 1 tháng (month) | tổng tiền các đêm được đổi (total, chia đều, lẻ dồn đêm cuối)
   fromNight?: string // chỉ đổi các đêm >= ngày này (mặc định: tất cả)
   dryRun?: boolean
 }
@@ -79,7 +79,7 @@ export async function setPrice(rrId: number, input: PriceInput, actor: Actor) {
   if (!writesEnabled()) throw new WriteError('Chức năng ghi lên ezCloud đang tắt (EZCLOUD_WRITE_ENABLED)', 'disabled')
   const amount = Math.round(Number(input.amount))
   if (!Number.isFinite(amount) || amount < 0 || amount > 500_000_000) throw new WriteError('Số tiền không hợp lệ', 'invalid')
-  if (!['night', 'month'].includes(input.mode)) throw new WriteError('Kiểu giá không hợp lệ', 'invalid')
+  if (!['night', 'month', 'total'].includes(input.mode)) throw new WriteError('Kiểu giá không hợp lệ', 'invalid')
 
   const client = await EzClient.fromStore()
   const v3 = await client.reservationRoomV3(rrId)
@@ -94,10 +94,20 @@ export async function setPrice(rrId: number, input: PriceInput, actor: Actor) {
   if ([...types].some((t) => t !== 'DAY_PRICE'))
     throw new WriteError(`Booking có kiểu giá ${[...types].join(', ')} — chưa hỗ trợ, sửa trực tiếp trên ezCloud`, 'unsupported')
 
+  const targets = charges.filter((c) => !input.fromNight || nightOf(c)! >= input.fromNight)
+  const base = targets.length ? Math.floor(amount / targets.length) : 0
+  const lastKey = targets.length ? targets[targets.length - 1].PriceKey : null
   const models = charges.map((c) => {
     const night = nightOf(c)!
     const change = !input.fromNight || night >= input.fromNight
-    const perNight = input.mode === 'night' ? amount : Math.round(amount / daysInMonth(night))
+    const perNight =
+      input.mode === 'night'
+        ? amount
+        : input.mode === 'month'
+          ? Math.round(amount / daysInMonth(night))
+          : c.PriceKey === lastKey
+            ? amount - base * (targets.length - 1)
+            : base
     const value = change ? perNight : Number(c.Value ?? 0)
     const d = new Date(night + 'T00:00:00Z')
     return {
@@ -149,7 +159,7 @@ export async function setPrice(rrId: number, input: PriceInput, actor: Actor) {
     .map((c: any) => ({ night: nightOf(c), got: c.Value, want: want.get(nightOf(c)!) }))
   const ok = mismatch.length === 0
   await logWrite(actor, 'set_price', rrId, input, { nights: preview.nights, changed: preview.changed, perNight: preview.perNight }, resp, ok, { mismatch })
-  await afterWrite(client, rrId, actor, `Nhập giá ${input.mode === 'month' ? 'tháng' : 'đêm'} ${amount.toLocaleString('vi-VN')}đ: ${preview.changed} đêm, tổng ${preview.oldTotal.toLocaleString('vi-VN')} → ${preview.newTotal.toLocaleString('vi-VN')}đ`)
+  await afterWrite(client, rrId, actor, `Nhập giá ${input.mode === 'month' ? 'tháng' : input.mode === 'total' ? 'tổng' : 'đêm'} ${amount.toLocaleString('vi-VN')}đ: ${preview.changed} đêm, tổng ${preview.oldTotal.toLocaleString('vi-VN')} → ${preview.newTotal.toLocaleString('vi-VN')}đ`)
   if (!ok) throw new WriteError(`ezCloud đã nhận lệnh nhưng ${mismatch.length} đêm chưa đúng giá — kiểm tra trên ezCloud`, 'verify_failed', mismatch)
   return { ok: true, preview }
 }

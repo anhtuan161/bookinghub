@@ -284,7 +284,7 @@ export function BookingModal({ id, onClose, onChanged }: { id: number | null; on
 // Thao tác GHI lên ezCloud (quyền coliving.write). Luôn xem trước → xác nhận → server đọc lại để kiểm tra.
 function WritePanel({ b, onDone }: { b: any; onDone: () => void }) {
   const [tab, setTab] = useState<'price' | 'checkin' | null>(null)
-  const [mode, setMode] = useState<'month' | 'night'>((b.nights ?? 0) >= 28 ? 'month' : 'night')
+  const [mode, setMode] = useState<'total' | 'month' | 'night'>((b.nights ?? 0) >= 7 ? 'total' : 'night')
   const [amount, setAmount] = useState('')
   const [fromNight, setFromNight] = useState('')
   const [preview, setPreview] = useState<PricePreview | null>(null)
@@ -386,16 +386,17 @@ function WritePanel({ b, onDone }: { b: any; onDone: () => void }) {
                 className="input"
                 value={mode}
                 onChange={(e) => {
-                  setMode(e.target.value as 'month' | 'night')
+                  setMode(e.target.value as 'total' | 'month' | 'night')
                   setPreview(null)
                 }}
               >
+                <option value="total">Tổng tiền cả booking (chia đều các đêm)</option>
                 <option value="month">Giá tháng (chia theo số ngày của tháng)</option>
                 <option value="night">Giá 1 đêm</option>
               </select>
             </div>
             <div>
-              <label className="label">{mode === 'month' ? 'Tiền thuê / tháng' : 'Giá / đêm'} (đ)</label>
+              <label className="label">{mode === 'total' ? (fromNight ? 'Tổng tiền các đêm từ ngày chọn' : 'Tổng tiền cả booking') : mode === 'month' ? 'Tiền thuê / tháng' : 'Giá / đêm'} (đ)</label>
               <input
                 className="input"
                 inputMode="numeric"
@@ -404,7 +405,7 @@ function WritePanel({ b, onDone }: { b: any; onDone: () => void }) {
                   setAmount(e.target.value)
                   setPreview(null)
                 }}
-                placeholder={mode === 'month' ? 'vd 4.500.000' : 'vd 450.000'}
+                placeholder={mode === 'night' ? 'vd 450.000' : 'vd 6.000.000'}
               />
             </div>
             <div>
