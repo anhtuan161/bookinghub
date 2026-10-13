@@ -48,9 +48,8 @@ async function logWrite(actor: Actor, action: string, rrId: number, params: any,
 }
 
 async function afterWrite(client: EzClient, rrId: number, actor: Actor, summary: string) {
-  // làm mới ngay chi tiết booking trong DB, trạng thái/ngày cập nhật ở lượt đồng bộ đầy đủ (~20s)
-  const det = await refreshBookingDetails(client, rrId, null).catch(() => null)
-  const v3 = det?.v3
+  // cập nhật trạng thái/ngày TRƯỚC (stay_from so với arrival_date mới), rồi làm mới tiền phòng/dịch vụ/khoản thu
+  const v3 = await client.reservationRoomV3(rrId).catch(() => null)
   if (v3?.BookingStatus) {
     await q(
       `update cl_bookings set status = $2, arrival_at = $3, departure_at = $4, arrival_date = $5, departure_date = $6, updated_at = now()
@@ -58,6 +57,7 @@ async function afterWrite(client: EzClient, rrId: number, actor: Actor, summary:
       [rrId, v3.BookingStatus, v3.ArrivalDate, v3.DepartureDate, localDate(v3.ArrivalDate), localDate(v3.DepartureDate)],
     ).catch(() => {})
   }
+  await refreshBookingDetails(client, rrId, null).catch((e) => console.error('[write] refresh', e.message))
   await q('insert into cl_booking_events(reservation_room_id, kind, summary) values($1,$2,$3)', [rrId, 'write', `${summary} (bởi ${actor.email} từ webapp)`])
   await q('insert into cl_sync_requests(requested_by) values($1)', [actor.id])
 }

@@ -13,6 +13,8 @@ import { config } from '../config.js'
 // NUMERIC trả về số. Áp dụng cho mọi pool trong process (cả Supabase — db.ts đã xử lý cả 2 dạng).
 pg.types.setTypeParser(1082, (v) => v)
 pg.types.setTypeParser(1700, (v) => (v === null ? null : parseFloat(v)))
+// BIGINT (id ezCloud, count) → number (mọi id < 2^53)
+pg.types.setTypeParser(20, (v) => (v === null ? null : Number(v)))
 
 export const appDbEnabled = !!config.appDatabaseUrl
 

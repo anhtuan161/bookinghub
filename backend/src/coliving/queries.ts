@@ -416,8 +416,11 @@ export async function revenueYear(yearIn?: number) {
     [start, end],
   )
   const total = monthly.reduce(
-    (a, m) => ({ nights: a.nights + m.soldNights, revenue: a.revenue + m.revenue, available: a.available + m.availableNights }),
-    { nights: 0, revenue: 0, available: 0 },
+    (a, m) => ({
+      nights: a.nights + m.soldNights, revenue: a.revenue + m.revenue, available: a.available + m.availableNights,
+      collected: a.collected + m.collected, otherServices: a.otherServices + m.otherServices,
+    }),
+    { nights: 0, revenue: 0, available: 0, collected: 0, otherServices: 0 },
   )
   return {
     year,
