@@ -173,7 +173,7 @@ async function runSyncLocked(trigger: string): Promise<SyncStats> {
     if (rows.length === 0) throw new Error('ezCloud trả 0 booking — dừng để tránh đánh dấu xoá nhầm')
 
     const existing = new Map<number, any>()
-    for (const r of await q<any>(`select ${WATCH.join(',')}, reservation_room_id, hash, missing_since from cl_bookings`))
+    for (const r of await q<any>(`select ${WATCH.join(',')}, reservation_room_id, reservation_number, hash, missing_since from cl_bookings`))
       existing.set(Number(r.reservation_room_id), r)
     stats.baseline = existing.size === 0
 

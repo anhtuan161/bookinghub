@@ -402,14 +402,14 @@ export async function revenueDaily(monthIn?: string) {
   const start = `${month}-01`
   const rooms = await roomCount()
   const rows = await q<any>(
-    `with days as (select d::date day from generate_series($1::date, ($1::date + interval '1 month' - interval '1 day'), interval '1 day') d)
-     select days.day::text as day,
-            (select count(*) from cl_bookings b where ${ACTIVE} and b.arrival_date <= days.day and ${DEP} > days.day)::int as sold,
+    `with days as (select d::date as dd from generate_series($1::date, ($1::date + interval '1 month' - interval '1 day'), interval '1 day') d)
+     select days.dd::text as day,
+            (select count(*) from cl_bookings b where ${ACTIVE} and b.arrival_date <= days.dd and ${DEP} > days.dd)::int as sold,
             (select coalesce(sum(n.amount),0) from cl_booking_nights n join cl_bookings b on b.reservation_room_id = n.reservation_room_id
-              where ${ACTIVE} and n.night = days.day)::float as revenue,
-            (select count(*) from cl_bookings b where ${ACTIVE} and b.arrival_date = days.day)::int as arrivals,
-            (select count(*) from cl_bookings b where ${ACTIVE} and b.departure_date = days.day and b.arrival_date < days.day)::int as departures
-       from days order by days.day`,
+              where ${ACTIVE} and n.night = days.dd)::float as revenue,
+            (select count(*) from cl_bookings b where ${ACTIVE} and b.arrival_date = days.dd)::int as arrivals,
+            (select count(*) from cl_bookings b where ${ACTIVE} and b.departure_date = days.dd and b.arrival_date < days.dd)::int as departures
+       from days order by days.dd`,
     [start],
   )
   return { month, rooms, days: rows.map((r) => ({ ...r, occupancy: rooms ? r.sold / rooms : 0 })) }
