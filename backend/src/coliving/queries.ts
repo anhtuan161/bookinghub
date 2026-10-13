@@ -152,7 +152,7 @@ export async function buildAlerts(D: string): Promise<Alert[]> {
                        b.arrival_date, ${DEP} dep, b.guest_name guest, b.source_name source
                   from cl_bookings b left join cl_rooms r on r.room_id = b.room_id
                  where ${ACTIVE} and b.room_id is not null and ${DEP} > $1::date)
-     select a.room, a.number as number_a, a.guest as guest_a, a.arrival_date as from_a, a.dep as to_a,
+     select a.room, a.id as id_a, c.id as id_b, a.number as number_a, a.guest as guest_a, a.arrival_date as from_a, a.dep as to_a,
             c.number as number_b, c.guest as guest_b, c.arrival_date as from_b, c.dep as to_b
        from x a join x c on a.room_id = c.room_id and a.id < c.id and a.arrival_date < c.dep and c.arrival_date < a.dep
       order by a.room, a.arrival_date`,

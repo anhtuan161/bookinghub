@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BookingModal, Empty, ErrorBox, PageHeader, SourcePill, StatusPill, SyncBar } from '../../components/coliving/ui'
+import { BookingModal, Empty, ErrorBox, EzLink, PageHeader, SourcePill, StatusPill, SyncBar } from '../../components/coliving/ui'
 import { STATUS, addDaysIso, dateTime, dmy, download, getBookings, getEvents, localToday, money, toCsv, EVENT_META, type ClBooking, type ClEvent } from '../../lib/coliving'
 
 export default function Bookings() {
@@ -145,6 +145,7 @@ export default function Bookings() {
                     <th className="px-3 py-2">Trạng thái</th>
                     <th className="px-3 py-2 text-right">Tiền phòng</th>
                     <th className="px-3 py-2">Tạo</th>
+                    <th className="px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -172,6 +173,9 @@ export default function Bookings() {
                       <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-400">
                         {b.created_by}
                         <div>{dateTime(b.created_at)}</div>
+                      </td>
+                      <td className="px-1 py-2">
+                        <EzLink id={b.id} />
                       </td>
                     </tr>
                   ))}

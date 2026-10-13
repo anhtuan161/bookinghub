@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BookingList, BookingModal, ErrorBox, PageHeader, Stat, SyncBar } from '../../components/coliving/ui'
+import { BookingList, BookingModal, ErrorBox, EzLink, PageHeader, Stat, SyncBar } from '../../components/coliving/ui'
 import { can } from '../../lib/auth'
 import { EVENT_META, addDaysIso, dateTime, dm, getOverview, localToday, money, pct, shortMoney, type Overview as O } from '../../lib/coliving'
 import { useSession } from '../../lib/session'
@@ -102,7 +102,7 @@ export default function Overview() {
                         <ul className="divide-y divide-slate-100 text-sm">
                           {a.items.map((o: any, i: number) => (
                             <li key={i} className="px-4 py-2">
-                              <b>{o.room}</b>: #{o.number_a} {o.guest_a} ({dm(o.from_a)}→{dm(o.to_a)}) chồng #{o.number_b} {o.guest_b} ({dm(o.from_b)}→{dm(o.to_b)})
+                              <b>{o.room}</b>: #{o.number_a} {o.guest_a} ({dm(o.from_a)}→{dm(o.to_a)}) <EzLink id={o.id_a} /> chồng #{o.number_b} {o.guest_b} ({dm(o.from_b)}→{dm(o.to_b)}) <EzLink id={o.id_b} />
                             </li>
                           ))}
                         </ul>

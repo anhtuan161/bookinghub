@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Bar, BookingModal, ErrorBox, PageHeader, Stat, SyncBar } from '../../components/coliving/ui'
+import { Bar, BookingModal, ErrorBox, EzLink, PageHeader, Stat, SyncBar } from '../../components/coliving/ui'
 import {
   SEGMENT,
   dm,
@@ -200,8 +200,8 @@ export default function Revenue() {
               <h2 className="border-b border-slate-100 px-4 py-3 font-semibold text-slate-800">Booking chưa có giá / giá bất thường ({data.missingPrice.length})</h2>
               <ul className="divide-y divide-slate-100 text-sm">
                 {data.missingPrice.map((b) => (
-                  <li key={b.id}>
-                    <button onClick={() => setOpen(b.id)} className="flex w-full gap-3 px-4 py-2 text-left hover:bg-slate-50">
+                  <li key={b.id} className="flex items-center hover:bg-slate-50">
+                    <button onClick={() => setOpen(b.id)} className="flex min-w-0 flex-1 gap-3 py-2 pl-4 pr-2 text-left">
                       <span className="w-16 font-semibold">{b.room ?? 'Chưa gán'}</span>
                       <span className="flex-1">{b.guest ?? '—'}</span>
                       <span className="text-slate-500">
@@ -209,6 +209,7 @@ export default function Revenue() {
                       </span>
                       <span className="text-xs text-slate-400">#{b.number} · {b.rate_plan}</span>
                     </button>
+                    <EzLink id={b.id} label className="mr-2" />
                   </li>
                 ))}
               </ul>

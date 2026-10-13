@@ -9,6 +9,7 @@ import {
   getBooking,
   getStatus,
   money,
+  ezUrl,
   type ClBooking,
   type SyncState,
 } from '../../lib/coliving'
@@ -99,14 +100,30 @@ export function SyncBar({ state: given }: { state?: SyncState | null }) {
   )
 }
 
+// Nút mở booking trên ezCloud (tab mới). Sửa trên ezCloud → đồng bộ lại sau ≤ 15 phút hoặc "Đồng bộ ngay".
+export function EzLink({ id, label = false, className = '' }: { id: number; label?: boolean; className?: string }) {
+  return (
+    <a
+      href={ezUrl(id)}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      title="Mở booking này trên ezCloud"
+      className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50 ${className}`}
+    >
+      {label ? 'Mở trên ezCloud' : 'ezCloud'} ↗
+    </a>
+  )
+}
+
 // Bảng booking gọn (dùng ở Tổng quan)
 export function BookingList({ rows, onOpen, empty, showDates = true }: { rows: ClBooking[]; onOpen: (id: number) => void; empty: string; showDates?: boolean }) {
   if (!rows.length) return <Empty>{empty}</Empty>
   return (
     <ul className="divide-y divide-slate-100">
       {rows.map((b) => (
-        <li key={b.id}>
-          <button onClick={() => onOpen(b.id)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50">
+        <li key={b.id} className="flex items-center hover:bg-slate-50">
+          <button onClick={() => onOpen(b.id)} className="flex min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 pr-2 text-left">
             <span className="w-16 shrink-0 font-semibold text-slate-800">{b.room ?? <span className="text-amber-600">Chưa gán</span>}</span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm text-slate-700">{b.guest ?? '—'}</span>
@@ -119,6 +136,7 @@ export function BookingList({ rows, onOpen, empty, showDates = true }: { rows: C
             <SourcePill source={b.source} />
             <StatusPill status={b.status} />
           </button>
+          <EzLink id={b.id} className="mr-2" />
         </li>
       ))}
     </ul>
@@ -141,6 +159,9 @@ export function BookingModal({ id, onClose }: { id: number | null; onClose: () =
       {b && (
         <div className="space-y-5">
           <div className="flex flex-wrap items-center gap-2">
+            <a href={ezUrl(b.id)} target="_blank" rel="noreferrer" className="btn-primary btn-sm order-last ml-auto">
+              Mở trên ezCloud ↗
+            </a>
             <StatusPill status={b.status} />
             <SourcePill source={b.source} />
             {b.ota_ref && <span className="badge bg-slate-100 text-slate-600">Mã OTA: {b.ota_ref}</span>}
@@ -192,7 +213,7 @@ export function BookingModal({ id, onClose }: { id: number | null; onClose: () =
               </ul>
             </div>
           )}
-          <p className="text-xs text-slate-400">Dữ liệu chỉ đọc từ ezCloud. Sửa booking trên ezCloud, hệ thống tự cập nhật sau lượt đồng bộ kế tiếp.</p>
+          <p className="text-xs text-slate-400">Dữ liệu chỉ đọc từ ezCloud. Bấm “Mở trên ezCloud” để sửa (cần đang đăng nhập ezCloud trên trình duyệt này); hệ thống tự cập nhật sau ≤ 15 phút, hoặc bấm “Đồng bộ ngay” ở trang Kết nối ezCloud.</p>
         </div>
       )}
     </Modal>

@@ -146,6 +146,10 @@ export const requestSync = () => api<{ queued: boolean; message: string }>('/col
 export const connectEzcloud = (session: string) => api<{ ok: boolean; status: EzStatus }>('/coliving/connect', { method: 'POST', json: { session } })
 export const disconnectEzcloud = () => api('/coliving/connect', { method: 'DELETE' })
 
+// Trang chi tiết booking trên ezCloud (cần đăng nhập ezCloud trên trình duyệt đang dùng)
+export const EZCLOUD_URL = 'https://pms.ezcloudhotel.com'
+export const ezUrl = (reservationRoomId: number) => `${EZCLOUD_URL}/#/reservation/${reservationRoomId}`
+
 // ---------- hiển thị ----------
 export const money = (n: number | null | undefined) => (n ? Math.round(n).toLocaleString('vi-VN') + 'đ' : '0đ')
 export const shortMoney = (n: number | null | undefined) => {
