@@ -8,7 +8,7 @@ Doc file nay TRUOC khi sua code/deploy. Doc them: `docs/EZCLOUD-API.md` (API noi
 
 | Muc | Gia tri |
 |---|---|
-| URL | `http://100.86.217.48:8097` (Tailscale) / `http://190.168.1.223:8097` (LAN). KHONG public. |
+| URL | Ban CHINH: `https://hub.thomstay.com` (Cloudflare tunnel -> `bookinghub:8787`, khong Access, app tu dang nhap; user chon huong 1 ngay 2026-10-13, cho them route). Noi bo: `http://100.86.217.48:8097` (Tailscale) / `http://190.168.1.223:8097` (LAN). Vercel/Render (master) giu ban cu, se tat khi hub on dinh. |
 | May | docker-core (VM 100), stack `/data/compose/bookinghub/` |
 | Container | `bookinghub` (web + API, cong 8097->8787), `bookinghub-worker` (dong bo ezCloud) - cung image `bookinghub:<ts>-<sha>` |
 | Kho code goc | docker-core `/data/src/bookinghub.git` (bare). Hook `post-receive` mirror sang Gitea `thomstay/bookinghub` (private, `http://100.86.217.48:3030/thomstay/bookinghub`) |
@@ -129,7 +129,8 @@ Backup: DB `bookinghub` nam trong `pg_dumpall` hang dem (`pg-backup.timer`, ma h
 - [ ] USER: xu ly booking cu chua check-in/out tren ezCloud (canh bao tren Tong quan) va xoa du lieu site ezCloud tren Chrome ca nhan (Application > Clear site data, KHONG bam Dang xuat) de khong 2 noi cung refresh token.
 - [ ] USER: sua gia cac booking dai han gia 0 tren ezCloud (trang Doanh thu liet ke).
 - [ ] USER (tuy chon): token + chat id Telegram.
-- [ ] AI: public qua Cloudflare (`hub.thomstay.com`?) chi sau khi co admin: route tunnel -> `bookinghub:8787`, dat `PUBLIC_URL=https://...`, `COOKIE_SECURE=true`, `TRUST_PROXY=true` trong `.env` stack; can user dong y + them route.
+- [x] AI: server san sang public (PUBLIC_URL https://hub.thomstay.com, COOKIE_SECURE=auto, TRUST_PROXY=uniquelocal, header bao mat + CSP) 2026-10-13. [ ] USER them route tunnel; AI test tu ngoai.
+- [ ] Sau khi hub on dinh: tat Vercel/Render (ban cu) hoac de lai chi doc; quyet dinh merge `feat/coliving-auth` vao master (khi do Vercel se hong dang nhap neu chua tat).
 - [ ] AI: SMTP (gui link xac nhan email / dat lai mat khau tu dong) khi user co tai khoan mail gui.
 - [ ] AI: (da duoc user dong y 2026-10-13, de sau) day lich trong/da dat 11 phong Thom House vao Booking Hub (Supabase `properties` + `availability_calendar`, nguon `ezcloud`) de sale tra cung villa - KHONG day thong tin khach.
 - [ ] AI: bao cao thu tien that (api/statistics/... - chua do), doi soat cong no OTA; hop dong/tien coc khach dai han.
