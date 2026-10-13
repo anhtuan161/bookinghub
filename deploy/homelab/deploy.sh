@@ -57,4 +57,6 @@ if [[ "$st" != "healthy healthy " ]]; then
   ssh "$HOST" "docker logs --tail 40 bookinghub; docker logs --tail 40 bookinghub-worker"
   exit 1
 fi
+# 6. Don image cu: giu 5 ban moi nhat de rollback (moi ban chi khac ~1 MB, phan con lai dung chung layer)
+ssh "$HOST" "docker image ls bookinghub --format '{{.Tag}}' | sort -r | tail -n +6 | xargs -r -I{} docker image rm -f bookinghub:{} >/dev/null 2>&1 || true"
 echo "== OK: http://100.86.217.48:8097 (Tailscale) | http://190.168.1.223:8097 (LAN)"
