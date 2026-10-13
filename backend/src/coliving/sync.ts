@@ -351,6 +351,17 @@ export async function refreshBookingDetails(client: EzClient, rrId: number, hash
   const nights = new Map<string, number>()
   for (const ch of list) {
     if (ch?.Status === false) continue
+    // Giá tuần/tháng (bật trong cấu hình loại giá ezCloud): 1 khoản cho cả kỳ → chia đều các đêm StartDate..EndDate
+    if ((ch?.Type === 'WEEK_PRICE' || ch?.Type === 'MONTH_PRICE') && ch?.StartDate && ch?.EndDate) {
+      const from = localDate(ch.StartDate)
+      const to = localDate(ch.EndDate)
+      const days: string[] = []
+      for (let d = from; d < to && days.length < 62; d = addDay(d, 1)) days.push(d)
+      if (!days.length) days.push(from)
+      const per = Math.round((Number(ch?.Value ?? 0) / days.length) * 100) / 100
+      for (const d of days) nights.set(d, (nights.get(d) ?? 0) + per)
+      continue
+    }
     const m = /^DAY(\d{4})(\d{2})(\d{2})$/.exec(String(ch?.PriceKey ?? ''))
     const night = m ? `${m[1]}-${m[2]}-${m[3]}` : ch?.StartDate ? localDate(ch.StartDate) : null
     if (!night) continue
