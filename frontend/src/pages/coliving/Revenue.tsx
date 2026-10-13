@@ -87,7 +87,7 @@ export default function Revenue() {
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               {data.missingPrice.length > 0 && (
                 <div>
-                  ⚠️ <b>{data.missingPrice.length} booking</b> trong năm chưa có giá hoặc giá bất thường (< 50.000đ/đêm) trên ezCloud → doanh thu đang thiếu. Sửa giá trên ezCloud, hệ thống tự cập nhật.
+                  ⚠️ <b>{data.missingPrice.length} booking</b> trong năm chưa có giá hoặc giá bất thường (dưới 50.000đ/đêm) trên ezCloud → doanh thu đang thiếu. Sửa giá trên ezCloud, hệ thống tự cập nhật.
                 </div>
               )}
               {data.chargesNotSynced > 0 && <div>⏳ {data.chargesNotSynced} booking chưa lấy xong tiền phòng theo đêm (đang đồng bộ dần).</div>}
